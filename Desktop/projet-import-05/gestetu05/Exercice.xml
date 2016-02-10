@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<repertoire>
+  <utilisateur NuméroUtilisateur="0">
+    <nom>Admin</nom>
+    <MotDePasse>12345678</MotDePasse>
+    <Profession>Informaticien</Profession>
+  </utilisateur>
+  <utilisateur NuméroUtilisateur="1">
+    <nom>Momo</nom>
+    <MotDePasse>abcd</MotDePasse>
+    <Profession>agriculteur</Profession>
+  </utilisateur>
+  <utilisateur NuméroUtilisateur="2">
+    <nom>Alexandre</nom>
+    <MotDePasse>abcde</MotDePasse>
+    <Profession>etudiant</Profession>
+  </utilisateur>
+  <utilisateur NuméroUtilisateur="3">
+    <nom>Micha�l</nom>
+    <MotDePasse>mmmm</MotDePasse>
+    <Profession>etudiant</Profession>
+  </utilisateur>
+  <utilisateur NuméroUtilisateur="4">
+    <nom>Torguet</nom>
+    <MotDePasse>torguet</MotDePasse>
+    <Profession>informaticien</Profession>
+  </utilisateur>
+</repertoire>
