@@ -243,6 +243,7 @@ int AjouterUtilisateur(List<String> AjoutUtilisateur,String NomFichier){
       }
       else{
           resultatAjout= 1;
+          str Teststr = "test";
       }
    }
       
