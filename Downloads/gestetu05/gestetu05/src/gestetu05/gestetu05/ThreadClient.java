@@ -55,7 +55,7 @@ class ThreadClient extends Thread {
 					System.out.println(dataSent);
 					System.out.println("--- fin dataSent ---");
 					buf = "";
-				} 
+				}
 				else if (clientInput.endsWith(Character.toString((char)4)))
 				{
 					// on ne rajoute pas la derniere ligne et on traite directement la requete

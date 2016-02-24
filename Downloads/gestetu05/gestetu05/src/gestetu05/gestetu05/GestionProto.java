@@ -35,6 +35,15 @@ public class GestionProto {
 		monGU = null;
 	}
 	
+	public Document LireMess(String mess) throws JDOMException, IOException {
+		
+		SAXBuilder sxb = new SAXBuilder();
+		Document reqXML = sxb.build(new StringReader(mess));		
+		
+		return reqXML;
+		
+	}
+	
 	public String GenererMess(String type, String action, String nomUtilisateur,String mdp,String Profession, String res)
 	{
 		// on prépare le squelette de la réponse
@@ -108,12 +117,15 @@ public class GestionProto {
 	public String traitementReq(String req) {
 		
 		// on vérifie que la requête est lisible en XML
-		SAXBuilder sxb = new SAXBuilder();
-		try {
-			
-			Document reqXML = sxb.build(new StringReader(req));		
+		
 		
 		try {
+			
+		Document reqXML = LireMess(req);
+		
+		//Element elemXML;
+		
+		// elemXML.getRootElement ???
 		
 		Element root = reqXML.getRootElement();
 		
@@ -231,7 +243,6 @@ public class GestionProto {
 		
 		} catch (NoSuchElementException nsee) {
 			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur" ,"MotDePasse", "Profession", "-1");
-		}
 		} catch (JDOMException je) {
 			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur" ,"MotDePasse", "Profession", "-1");
 		} catch (IOException e) {
