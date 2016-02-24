@@ -5,6 +5,9 @@
  */
 package gestetu05;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
@@ -71,6 +74,9 @@ public class Client {
       
    }
 }
+    
+    
+    
     static void ChercherInformation(String NomFichier, String recherche){
     Element racine = new Element("repertoire") ;
     Document document = new Document(racine);
@@ -106,11 +112,16 @@ public class Client {
    }
 }
 
+    
+    
         public static Document readFromString(String xmlString) throws JDOMException, IOException
     {
 	    SAXBuilder builder = new SAXBuilder();
 	    return builder.build(new ByteArrayInputStream(xmlString.getBytes("UTF-8")));
     }
+        
+        
+        
         public static String Menu() throws IOException{
             String userInput;
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
@@ -130,6 +141,10 @@ public class Client {
         }while(!"1".equals(userInput) && !"2".equals(userInput)&& !"3".equals(userInput)&& !"4".equals(userInput)&& !"5".equals(userInput));
             return userInput;
         }
+        
+        
+        
+        
     public static void main(String[] args) throws IOException, JDOMException {
         String choix1 = "1";
         
@@ -140,13 +155,17 @@ public class Client {
         GestionnaireUtilisateur monGU = null;
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         
-///////////////////////Création du socket client////////////////////////////////////////
+///////////////////////  Création du socket client<->serveur /////////////////////////////
         
-       			Socket sockClient = new Socket("127.0.0.1", 57000);			
-			PrintWriter outToServer = new PrintWriter(sockClient.getOutputStream(), true);
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sockClient.getInputStream()));
+   		Socket sockClient = new Socket("127.0.0.1", 58000);			
+		PrintWriter outToServer = new PrintWriter(sockClient.getOutputStream(), true);
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sockClient.getInputStream()));
+
+		
+		
 /////////////////////////////////////////////////////////////////////////////////////////
-        System.out.println("################################################################");
+
+		System.out.println("################################################################");
         System.out.println("################################################################");
         System.out.println("############ BIENVENUE DANS NOTRE PROJET JAVA ##################");
         System.out.println("################################################################");     
@@ -189,7 +208,33 @@ userInput = Menu();
             System.out.println("srvRep: " + srvRep);       
                 if (!srvRep.equals("a") ){
                     System.out.println("Vous êtes bien connecté!");
-                    LireXML("Exercice.xml"); 
+                    LireXML("Exercice.xml");
+                    
+                    /* Création du socket ecoute de la messagerie instantannée */
+                    
+                    try (ServerSocket raspberryPi = new ServerSocket())
+             		{
+             			
+             			InetAddress adresseEcoute = InetAddress.getByName("127.0.0.1");
+             			InetSocketAddress socketEcoute = new InetSocketAddress(adresseEcoute, 58000);
+             			raspberryPi.bind(socketEcoute);
+             			System.out.println("TCP server listening: " + raspberryPi);
+             			
+             			Socket socketDonnees;
+             			
+             			while(true) {
+             				socketDonnees = raspberryPi.accept();
+             				System.out.println("user connected: " + socketDonnees);
+             				// On lance le thread TCP pour ce client
+             				ThreadMessInst leThread = new ThreadMessInst(socketDonnees);
+             				leThread.start();
+             			}
+             		} catch (IOException e) {
+             			System.err.println("Problème avec le socket.");
+             			e.printStackTrace();
+             		}
+                    
+                    
                     userInput = Menu();
                 }
                 else{
