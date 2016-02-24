@@ -1,13 +1,13 @@
 # annuaire-java
-But : créer un annuaire en JAVA pour la validation de la première année du Master "Systèmes de Télécommunications et Réseaux Informatiques
+But : créer un annuaire en JAVA pour la validation de la première année du Master "Systèmes de Télécommunications et Réseaux Informatiques" à l'Université Toulouse III - Paul Sabatier.
 
 Pré-requis :
-Les clients et le serveurs dispose de la plate-forme lourde JAVA 7+.
+Les clients et le serveur disposent de la plate-forme lourde JAVA 7+.
 
 # V1
-- Base de données fichier XML marche (enregistrement/lecture)
+- Base de données (fichier XML) marche (enregistrement/lecture)
 - Dialogue à travers le réseau client->serveur et serveur->client fonctionnel mais protocole à formaliser
-- Affichage de la liste des utilisateurs
+- Affichage de la liste des utilisateurs marche
 - Connexion d'un utilisateur (nom/mot de passe) fonctionnel mais sans état (pas de sauvegarde de la liste des utilisateurs connectés)
 - Recherche d'un utilisateur (en texte exacte, sur tout les champs d'un utilisateur) fonctionnel (en local)
 
