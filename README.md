@@ -1,6 +1,7 @@
 # annuaire-java
-Annuaire JAVA M1 STRI
+But : créer un annuaire en JAVA pour la validation de la première année du Master "Systèmes de Télécommunications et Réseaux Informatiques
 
+Pré-requis :
 Les clients et le serveurs dispose de la plate-forme lourde JAVA 7+.
 
 # V1
