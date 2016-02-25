@@ -134,11 +134,17 @@ public class Client {
         System.out.println("############ --> Modification : tapez 3 ##########################");
         System.out.println("############ --> Rechercher : tapez 4 ##########################");
         System.out.println("############ --> Quitter : tapez 5 ##########################");
+        System.out.println("############ --> Chat : tapez 6 ##########################");
         
         if ((userInput = stdIn.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
 				System.out.println("Votre choix : " + userInput);
         }
-        }while(!"1".equals(userInput) && !"2".equals(userInput)&& !"3".equals(userInput)&& !"4".equals(userInput)&& !"5".equals(userInput));
+        } while(!"1".equals(userInput)
+        		&& !"2".equals(userInput)
+        		&& !"3".equals(userInput)
+        		&& !"4".equals(userInput)
+        		&& !"5".equals(userInput)
+        		&& !"6".equals(userInput));
             return userInput;
         }
         
@@ -157,7 +163,7 @@ public class Client {
         
 ///////////////////////  Création du socket client<->serveur /////////////////////////////
         
-   		Socket sockClient = new Socket("127.0.0.1", 58000);			
+   		Socket sockClient = new Socket("127.0.0.1", 57000);			
 		PrintWriter outToServer = new PrintWriter(sockClient.getOutputStream(), true);
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sockClient.getInputStream()));
 
@@ -212,27 +218,10 @@ userInput = Menu();
                     
                     /* Création du socket ecoute de la messagerie instantannée */
                     
-                    try (ServerSocket raspberryPi = new ServerSocket())
-             		{
-             			
-             			InetAddress adresseEcoute = InetAddress.getByName("127.0.0.1");
-             			InetSocketAddress socketEcoute = new InetSocketAddress(adresseEcoute, 58000);
-             			raspberryPi.bind(socketEcoute);
-             			System.out.println("TCP server listening: " + raspberryPi);
-             			
-             			Socket socketDonnees;
-             			
-             			while(true) {
-             				socketDonnees = raspberryPi.accept();
-             				System.out.println("user connected: " + socketDonnees);
-             				// On lance le thread TCP pour ce client
-             				ThreadMessInst leThread = new ThreadMessInst(socketDonnees);
-             				leThread.start();
-             			}
-             		} catch (IOException e) {
-             			System.err.println("Problème avec le socket.");
-             			e.printStackTrace();
-             		}
+                    ThreadEcouteurMI leThreadEcouteurMI = new ThreadEcouteurMI("127.0.0.1", 58000);
+                    leThreadEcouteurMI.start();
+                    
+                    
                     
                     
                     userInput = Menu();
@@ -296,7 +285,7 @@ userInput = Menu();
                 }
         }while("a".equals(srvRep)) ;
                                 
-            while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
+            while ((srvRep = inFromServer.readLine()).contains("</dasProtokol>") != true)
                 System.out.println("echo: " + srvRep);        
                 
 
@@ -375,7 +364,7 @@ userInput = Menu();
             userInput = Menu();
             outToServer.println(xmlOut + Character.toString((char)4));                    
                                 
-            while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
+            while ((srvRep = inFromServer.readLine()).contains("</dasProtokol>") != true)
                 System.out.println("echo: " + srvRep);        
                 
                                        
@@ -396,6 +385,33 @@ userInput = Menu();
             
             
         
+        }
+        else if ("6".equals(userInput)) {
+        	InetAddress adresseLocale = InetAddress.getByName("127.0.0.1");
+        	try(Socket sockChat = new Socket("127.0.0.1", 58000, adresseLocale, 58001))
+        	{
+    		PrintWriter outToChat = new PrintWriter(sockChat.getOutputStream(), true);
+    		BufferedReader inFromChat = new BufferedReader(new InputStreamReader(sockChat.getInputStream()));
+    		
+    		String userInput2;
+    		String reponseChat;
+    		while ((userInput2 = stdIn.readLine()) != null && !userInput2.equalsIgnoreCase("exit")) {
+				outToChat.println(xmlOut = GP.GenererMess("chat", userInput2, "hello comment va ?!" ,"?", "?", "??") + Character.toString((char)4));
+				//synchronized(System.out) {
+				System.out.println("réponse chat::");
+				
+					reponseChat = inFromChat.readLine();
+					System.out.println(reponseChat);
+			
+				System.out.println("::end rép chat");
+				//}
+    		}
+        	} catch (Exception e) {
+        		e.printStackTrace();
+        	}
+        	
+
+            userInput = Menu();
         }
         
      }while(!userInput.equals("5")); 
