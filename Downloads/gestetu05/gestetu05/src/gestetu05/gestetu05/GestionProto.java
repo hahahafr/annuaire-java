@@ -1,12 +1,11 @@
 package gestetu05;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -14,11 +13,9 @@ import java.util.NoSuchElementException;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.filter.ElementFilter;
+import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.jdom2.util.IteratorIterable;
-import org.jdom2.input.SAXBuilder;
 
 public class GestionProto {
 	
@@ -33,6 +30,67 @@ public class GestionProto {
 	public GestionProto()
 	{
 		monGU = null;
+	}
+	
+	public String RecevoirMessRzo(BufferedReader in) throws IOException {
+		
+		String clientInput;
+		String buf = "";
+
+		System.out.println("rzo1");
+		clientInput = in.readLine();
+		if (clientInput.equals("a")) {
+			return "a";
+		}
+		System.out.println("rzo2");
+		while(clientInput != null
+				&& !clientInput.endsWith("</dasProtokol>" + Character.toString((char)4))
+				&& !clientInput.endsWith(Character.toString((char)4))) {
+
+			System.out.println("rzo3: " + buf);
+				// on ajoute la ligne recue a la requete
+				buf = buf + clientInput + "\n";
+				System.out.println("rzo4: " + buf);
+				clientInput = in.readLine();
+				System.out.println("rzo5: " + buf);
+		}
+
+		System.out.println("rzo6: " + buf);
+			// la requete est entierement sur une ligne
+			if (clientInput.endsWith("</dasProtokol>" + Character.toString((char)4)))
+			{
+
+				System.out.println("rzo7: " + buf);
+				// on enleve le caractere \4 (EOT) de la chaine recue
+				clientInput = (String) clientInput.subSequence(0, clientInput.length() - 1);
+				
+				// on rajoute la derniere ligne dans le buffer et on le renvoi
+				buf = buf + clientInput + "\n";
+				System.out.println("got (1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(buf);
+				System.out.println("--- fin buffer ---");
+				
+				return buf;
+			}
+			else if (clientInput.endsWith(Character.toString((char)4)))
+			{
+				System.out.println("rzo8: " + buf);
+				// on ne rajoute pas la derniere ligne et on renvoi le buffer
+				System.out.println("got (plus de 1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(buf);
+				System.out.println("--- fin buffer ---");
+				
+				return buf;
+			}
+			else // clientInput == null
+			{
+				// on renvoi ce qu'on a déjà
+				return buf;
+			}
+								
+		
 	}
 	
 	public Document LireMess(String mess) throws JDOMException, IOException {

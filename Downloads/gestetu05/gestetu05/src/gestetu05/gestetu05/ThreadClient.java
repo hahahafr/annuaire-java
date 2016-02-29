@@ -49,7 +49,7 @@ class ThreadClient extends Thread {
 					System.out.println(buf);
 					System.out.println("--- fin buffer ---");
 					dataSent = notreGestionProto.traitementReq(buf);
-					outToClient.println(dataSent);
+					outToClient.println(dataSent + Character.toString((char)4));
 					System.out.println("sent:");
 					System.out.println("--- debut dataSent ---");
 					System.out.println(dataSent);
@@ -64,7 +64,7 @@ class ThreadClient extends Thread {
 					System.out.println(buf);
 					System.out.println("--- fin buffer ---");
 					dataSent = notreGestionProto.traitementReq(buf);
-					outToClient.println(dataSent);
+					outToClient.println(dataSent + Character.toString((char)4));
 					System.out.println("sent:");
 					System.out.println("--- debut dataSent ---");
 					System.out.println(dataSent);
