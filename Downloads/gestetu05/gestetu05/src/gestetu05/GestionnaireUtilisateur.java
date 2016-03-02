@@ -64,18 +64,21 @@ synchronized void EcrireFichierXML(List<String> Liste){
     while(i<e){ 
       Element utilisateur = new Element("utilisateur");
       Attribute numUtilisateur= new Attribute("NuméroUtilisateur",String.valueOf(i/3));
+      Element visibilite= new Element("Visibilite");
       utilisateur.setAttribute(numUtilisateur);
       Element nom = new Element("nom");
       nom.setText(Liste.get(i));
+      visibilite.setText(Liste.get(i+1));
       utilisateur.addContent(nom);
+      utilisateur.addContent(visibilite);
       Element mot_de_passe = new Element("MotDePasse");
-      mot_de_passe.setText(Liste.get(i+1));
+      mot_de_passe.setText(Liste.get(i+2));
       utilisateur.addContent(mot_de_passe);
       Element prof = new Element("Profession");
-      prof.setText(Liste.get(i+2));
+      prof.setText(Liste.get(i+3));
       utilisateur.addContent(prof);
       racine.addContent(utilisateur);
-      i=i+3;
+      i=i+4;
     };
     
     }
@@ -162,6 +165,7 @@ void ModicationXML(String NomFichier, String NomU, String MdpU){
    else
    {
       ListeUtilisateur.add(courant.getChild("nom").getText());
+      ListeUtilisateur.add(courant.getChild("Visibilite").getText());
       ListeUtilisateur.add(courant.getChild("MotDePasse").getText());
       ListeUtilisateur.add(courant.getChild("Profession").getText());
    }
@@ -199,6 +203,7 @@ List<String> LireXML(String NomFichier){
       Element courant = (Element)i.next();
       //On affiche le nom de l’élément courant
       ListeUtilisateur.add(courant.getChild("nom").getText());
+      ListeUtilisateur.add(courant.getChild("Visibilite").getText());
       ListeUtilisateur.add(courant.getChild("MotDePasse").getText());
       ListeUtilisateur.add(courant.getChild("Profession").getText());         
       
@@ -243,7 +248,6 @@ int AjouterUtilisateur(List<String> AjoutUtilisateur,String NomFichier){
       }
       else{
           resultatAjout= 1;
-          str Teststr = "test";
       }
    }
       
@@ -252,6 +256,7 @@ if(resultatAjout== 1){
   ListeUtilisateur.add(AjoutUtilisateur.get(0));
   ListeUtilisateur.add(AjoutUtilisateur.get(1));
   ListeUtilisateur.add(AjoutUtilisateur.get(2));
+  ListeUtilisateur.add(AjoutUtilisateur.get(3));
   System.out.println(ListeUtilisateur);
   EcrireFichierXML(ListeUtilisateur);
   enregistreXML("Exercice.xml");

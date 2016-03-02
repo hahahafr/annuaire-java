@@ -10,8 +10,14 @@ import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,11 +27,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jdk.internal.org.xml.sax.SAXException;
 import static jdk.nashorn.tools.ShellFunctions.input;
+import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import static org.jdom2.filter.Filters.document;
 import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
 
 /**
@@ -34,13 +43,192 @@ import org.jdom2.input.SAXBuilder;
  */
 public class Client {
 
+        static List<String> LireMail(String NomFichier){
+    Element racine = new Element("mail") ;
+    Document document = new Document(racine);
+    List<String> Liste = new ArrayList<>() ; ;
+    //On crée une instance de SAXBuilder
+      SAXBuilder sxb = new SAXBuilder();
+      try
+      {
+         //On crée un nouveau document JDOM avec en argument le fichier XML
+         //Le parsing est terminé ;)
+         document = sxb.build(new File(NomFichier));
+      }
+      catch(JDOMException | IOException e){}
+
+      //On initialise un nouvel élément racine avec l'élément racine du document.
+      racine = document.getRootElement();
+   //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+   List listMail = racine.getChildren("liste");
+   //On crée un Iterator sur notre liste
+   Iterator i = listMail.iterator(); 
+   System.out.println("mail::");
+   while(i.hasNext())
+   {
+       
+      //On recrée l'Element courant à chaque tour de boucle afin de
+      //pouvoir utiliser les méthodes propres aux Element comme :
+      //sélectionner un nœud fils, modifier du texte, etc...
+      Element courant = (Element)i.next();
+      //On affiche le nom de l’élément courant
+      System.out.println("mail::");
+      Liste.add(courant.getChild("destinataire").getAttributeValue("emetteur"));
+      Liste.add(courant.getChild("destinataire").getText());
+      System.out.println("mail---"+courant.getChild("destinataire").getText());
+      Liste.add(courant.getChild("message").getText());
+      System.out.println("mail--"+courant.getChild("message").getText());
+      
+   }
+   System.out.println("mail:::::"+ Liste);
+   return Liste;
+}
+
     public Client() {
     System.out.println("Création d'une instance Client !");
     }   
+    static ServerSocket connexion(int port, String uti){
+       ServerSocket ss = null;
+       Thread t;
+        try {
+            ss = new ServerSocket(port);           
+            System.out.println("Le serveur est à l'écoute du port "+ss.getLocalPort());
+            t = new Thread(new Accepter_connexion(ss,uti));
+            t.start();
+        } catch (IOException e) {
+            System.err.println("Le port "+ss.getLocalPort()+" est déjà utilisé !");
+        }
+        return ss;
+    }
+    static void Mess(String uti) throws IOException{
+        String userInput;
+        System.out.println("Envoyé message à un autre utilisateur, taper mess, \n"
+                + "sinon n'importe quoi d'autre:");
+        
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader stdIn2 = new BufferedReader(new InputStreamReader(System.in));
+        String mail;
+        
+         if ((userInput = stdIn.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
+				System.out.println("Votre choix : " + userInput);
+        }
+         if(userInput.equals("mess")){
+             System.out.println("Son nom:");
+              if ((userInput = stdIn2.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
+				System.out.println("Utilisateur : " + userInput);
+        }            
+             int Num;
+             Num =recupererNumUti("Exercice.xml",userInput);
+             System.out.println(Num);
+             Socket socket = null;
+             Thread t1;
+             try {                
+		System.out.println("Demande de connexion");
+		socket = new Socket("127.0.0.1",50000+Num);
+		System.out.println("Le lien a été établi"); // Si le message s'affiche c'est que je suis connecté
+                t1 = new Thread(new Chat_ClientServeurC(socket, uti));
+		t1.start();
+             }catch (IOException e) {
+            System.err.println("Utilisateur non connecté");
+            System.out.println("message pour le mail: ");
+            if ((mail = stdIn2.readLine()) != null && !mail.equalsIgnoreCase("exit")) {
+				
+                    int i=0;
+                    List<String> Liste;
+                    Element racine = new Element("mail") ;           
+                    Document document = new Document(racine);
+                    try{
+                        BufferedReader In = new BufferedReader(new FileReader("mail.xml"));
+                    }
+                    catch (FileNotFoundException fnfe) {
+           //si le fichier n'existe pas ...  
+           System.err.println("erreur!");
+           XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
+      //Remarquez qu'il suffit simplement de créer une instance de FileOutputStream
+      //avec en argument le nom du fichier pour effectuer la sérialisation.
+      sortie.output(document,new FileOutputStream("mail.xml"));
+                
+                    }
+                    Liste=LireMail("mail.xml");
+                    System.out.println("ffff"+Liste);
+                    System.out.println("lol"+userInput);
+                    Liste.add(uti);
+                    Liste.add(userInput);
+                    Liste.add(mail);
+                    int j = Liste.size();
+                    
+                    
+                    while(i<j){
+                        
+                        Element liste = new Element("liste");
+                        Attribute emetteur= new Attribute("emetteur",Liste.get(i));
+                        
+                        Element destinataire = new Element("destinataire");
+                        Element message = new Element("message");
+                        destinataire.setText(Liste.get(i+1));
+                        destinataire.setAttribute(emetteur);
+                        message.setText(Liste.get(i+2));
+                        liste.addContent(destinataire);
+                        liste.addContent(message);
+                        racine.addContent(liste);
+                                i=i+3;
+                    }
+                    
+                    try
+   {
+      //On utilise ici un affichage classique avec getPrettyFormat()
+      XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
+      //Remarquez qu'il suffit simplement de créer une instance de FileOutputStream
+      //avec en argument le nom du fichier pour effectuer la sérialisation.
+      sortie.output(document, new FileOutputStream("mail.xml"));
+   }
+   catch (java.io.IOException l){}
+            }
+            }
+             
+        }
+    }
     
-    static void LireXML(String NomFichier){
+    static int recupererNumUti(String NomFichier, String uti){
+        Element racine = new Element("repertoire") ;
+    Document document = new Document(racine);
+    int np = 0;
+    //On crée une instance de SAXBuilder
+      SAXBuilder sxb = new SAXBuilder();
+      try
+      {
+         //On crée un nouveau document JDOM avec en argument le fichier XML
+         //Le parsing est terminé ;)
+         document = sxb.build(new File(NomFichier));
+      }
+      catch(JDOMException | IOException e){}
+      //On initialise un nouvel élément racine avec l'élément racine du document.
+      racine = document.getRootElement();
+   //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+   List listUtilisateurs = racine.getChildren("utilisateur");
+   //On crée un Iterator sur notre liste
+   Iterator i = listUtilisateurs.iterator();
+   while(i.hasNext())
+   {
+      Element courant = (Element)i.next();
+      if (courant.getChild("nom").getText().equals(uti)){        
+          np = Integer.parseInt(courant.getAttribute("NuméroUtilisateur").getValue());
+          System.out.println(np); 
+          break;
+      }
+      else{
+          System.out.println("Cet utilisateur n'existe pas");
+          np = -1;
+      }
+    }
+   return np;
+    }
+        
+    
+    static int LireXML(String NomFichier, String uti){
     Element racine = new Element("repertoire") ;
     Document document = new Document(racine);
+    int np = 0;
 
     //On crée une instance de SAXBuilder
       SAXBuilder sxb = new SAXBuilder();
@@ -65,11 +253,18 @@ public class Client {
       //pouvoir utiliser les méthodes propres aux Element comme :
       //sélectionner un nœud fils, modifier du texte, etc...
       Element courant = (Element)i.next();
+      if (courant.getChild("nom").getText().equals(uti)){        
+          np = Integer.parseInt(courant.getAttribute("NuméroUtilisateur").getValue());
+          System.out.println(np); 
+      }
       //On affiche le nom de l’élément courant
+      if(courant.getChild("Visibilite").getText().equals("oui")){
       System.out.println("L'utilisateur "+courant.getChild("nom").getText());
-      System.out.println(" est "+courant.getChild("Profession").getText());         
+      System.out.println(" est "+courant.getChild("Profession").getText()); 
+      }
       
    }
+   return np;
 }
     static void ChercherInformation(String NomFichier, String recherche){
     Element racine = new Element("repertoire") ;
@@ -98,14 +293,47 @@ public class Client {
       //sélectionner un nœud fils, modifier du texte, etc...
       Element courant = (Element)i.next();
       //On affiche le nom de l’élément courant
-      if (courant.getChild("nom").getText().equals(recherche) || courant.getChild("Profession").getText().equals(recherche)){
+      if (courant.getChild("nom").getText().equals(recherche) && courant.getChild("Visibilite").getText().equals("oui") || courant.getChild("Profession").getText().equals(recherche)&& courant.getChild("Visibilite").getText().equals("oui")){
           System.out.println("Nom:"+courant.getChild("nom").getText());
           System.out.println("Profession:"+courant.getChild("Profession").getText()+"\n");
       }    
       
    }
 }
+   static void LireMailCo(String NomFichier, String uti){
+    Element racine = new Element("mail") ;
+    Document document = new Document(racine);
+    //On crée une instance de SAXBuilder
+      SAXBuilder sxb = new SAXBuilder();
+      try
+      {
+         //On crée un nouveau document JDOM avec en argument le fichier XML
+         //Le parsing est terminé ;)
+         document = sxb.build(new File(NomFichier));
+      }
+      catch(JDOMException | IOException e){}
 
+      //On initialise un nouvel élément racine avec l'élément racine du document.
+      racine = document.getRootElement();
+   //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+   List listUtilisateurs = racine.getChildren("liste");
+   //On crée un Iterator sur notre liste
+   Iterator i = listUtilisateurs.iterator(); 
+   System.out.println("Vos mails:\n");
+   while(i.hasNext())
+   {
+      //On recrée l'Element courant à chaque tour de boucle afin de
+      //pouvoir utiliser les méthodes propres aux Element comme :
+      //sélectionner un nœud fils, modifier du texte, etc...
+      Element courant = (Element)i.next();
+      //On affiche le nom de l’élément courant
+      if (courant.getChild("destinataire").getText().equals(uti)){
+          
+          System.out.println("mail de "+courant.getChild("destinataire").getAttributeValue("emetteur")+" : " +courant.getChild("message").getText());
+      }    
+      
+   }
+}
         public static Document readFromString(String xmlString) throws JDOMException, IOException
     {
 	    SAXBuilder builder = new SAXBuilder();
@@ -140,27 +368,26 @@ public class Client {
         GestionnaireUtilisateur monGU = null;
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         
-///////////////////////Création du socket client////////////////////////////////////////
-        
-       			Socket sockClient = new Socket("127.0.0.1", 57000);			
-			PrintWriter outToServer = new PrintWriter(sockClient.getOutputStream(), true);
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sockClient.getInputStream()));
+        try (///////////////////////Création du socket client////////////////////////////////////////
+            Socket sockClient = new Socket("127.0.0.1",2009) ){
+            PrintWriter outToServer = new PrintWriter(sockClient.getOutputStream(), true);
+            BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sockClient.getInputStream()));
 /////////////////////////////////////////////////////////////////////////////////////////
-        System.out.println("################################################################");
-        System.out.println("################################################################");
-        System.out.println("############ BIENVENUE DANS NOTRE PROJET JAVA ##################");
-        System.out.println("################################################################");     
+System.out.println("################################################################");
+System.out.println("################################################################");
+System.out.println("############ BIENVENUE DANS NOTRE PROJET JAVA ##################");
+System.out.println("################################################################");     
 userInput = Menu();
-     do{
-     System.out.println("TEST:" + userInput);
-	if("1".equals(userInput)){
-            
-            String utilisateur;
-            String mdp;
-           
+//do{
+    System.out.println("TEST:" + userInput);
+    if("1".equals(userInput)){
+        
+        String utilisateur;
+        String mdp;
+        
         System.out.println("Connexion: \n");
-            System.out.println("Entrer vos informations: \n"); 
-            do{
+        System.out.println("Entrer vos informations: \n"); 
+        do{
             do{
                 System.out.println("Nom d'utilisateur: \n");
                 
@@ -181,33 +408,41 @@ userInput = Menu();
             
             
             
-            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur ,mdp, "Profession","??");			        
-            outToServer.println(xmlOut + Character.toString((char)4));                    
-                                
-              
+            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur, "visi" ,mdp, "Profession","??");
+            outToServer.println(xmlOut + Character.toString((char)4));
+            
+            
             srvRep = inFromServer.readLine();
-            System.out.println("srvRep: " + srvRep);       
-                if (!srvRep.equals("a") ){
-                    System.out.println("Vous êtes bien connecté!");
-                    LireXML("Exercice.xml"); 
-                    userInput = Menu();
-                }
-                else{
-                    System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!"); 
-                }
+            System.out.println("srvRep: " + srvRep);
+            if (!srvRep.equals("a") ){
+                System.out.println("Vous êtes bien connecté!");
+                ServerSocket ss = null;
+                int h;
+                h = 50000+LireXML("Exercice.xml",utilisateur);
+                LireMailCo("mail.xml",utilisateur);
+               ss = connexion(h, utilisateur);
+               System.out.println(utilisateur + "est l'utilisateur");
+               System.out.println("le port est "+h);
+               Mess(utilisateur);
+               
+               
+               //userInput = Menu();
+            }
+            else{
+                System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
+            }
         }while("a".equals(srvRep)) ;       
-                    
-            
-                
-        }  	
-        else if ("2".equals(userInput)){
-            String utilisateur;
-            String mdp;
-            String prof;
-            System.out.println("Inscription: \n"); 
-            System.out.println("Entrer vos informations: \n"); 
-            
-            do{
+        
+    } 
+    else if ("2".equals(userInput)){
+        String utilisateur;
+        String visi;
+        String mdp;
+        String prof;
+        System.out.println("Inscription: \n");
+        System.out.println("Entrer vos informations: \n");
+        
+        do{
             do{
                 System.out.println("Nom d'utilisateur: \n");
                 
@@ -216,6 +451,15 @@ userInput = Menu();
                     System.out.println("Mauvaise entrée, recommencez!");
                 } 
             }while("".equals(utilisateur));
+            do{
+                System.out.println("Souhaitez vous être visible?: \n Entrez oui ou non");
+                
+                visi = stdIn.readLine();
+                System.out.print("votre choix : "+visi);
+                if(!visi.equals("oui") && !visi.equals("non")){
+                    System.out.println("Mauvaise entrée, recommencez!");
+                } 
+            }while(!visi.equals("oui") && !visi.equals("non"));
             
             do{
                 System.out.println("Mot de passe: \n");
@@ -234,35 +478,35 @@ userInput = Menu();
                     System.out.println("Mauvaise entrée, recommencez!");
                 } 
             }while("".equals(prof));
-                   
             
-            xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",utilisateur ,mdp, prof, "??");
-             
-            outToServer.println(xmlOut + Character.toString((char)4)); 
+            
+            xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",utilisateur,visi ,mdp, prof, "??");
+            
+            outToServer.println(xmlOut + Character.toString((char)4));
             
             srvRep = inFromServer.readLine();
-            System.out.println("srvRep: " + srvRep);       
-                if (!srvRep.equals("a")  ){
-                    System.out.println("Vous êtes bien inscrit!");
-                    userInput=Menu();                  
-                }
-                else{
-                    System.out.println("Utilisateur déja présent, Recommencez!"); 
-                }
+            System.out.println("srvRep: " + srvRep);
+            if (!srvRep.equals("a")  ){
+                System.out.println("Vous êtes bien inscrit!");
+                userInput=Menu();
+            }
+            else{
+                System.out.println("Utilisateur déja présent, Recommencez!");
+            }
         }while("a".equals(srvRep)) ;
-                                
-            while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
-                System.out.println("echo: " + srvRep);        
-                
-
-        } else if("3".equals(userInput)){
-            
-            String utilisateur;
-            String mdp;
-           
+        
+        while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
+            System.out.println("echo: " + srvRep);
+        
+        
+    } else if("3".equals(userInput)){
+        
+        String utilisateur;
+        String mdp;
+        
         System.out.println("Modification: \n");
-            System.out.println("Entrer vos informations: \n"); 
-            do{
+        System.out.println("Entrer vos informations: \n"); 
+        do{
             do{
                 System.out.println("Nom d'utilisateur: \n");
                 
@@ -283,78 +527,88 @@ userInput = Menu();
             
             
             
-            xmlOut = GP.GenererMess("requête", "Modification",utilisateur ,mdp, "Profession","??");			        
-            outToServer.println(xmlOut + Character.toString((char)4));                    
-                                
-              
+            xmlOut = GP.GenererMess("requête", "Modification",utilisateur,"visu" ,mdp, "Profession","??");
+            outToServer.println(xmlOut + Character.toString((char)4));
+            
+            
             srvRep = inFromServer.readLine();
-            System.out.println("srvRep: " + srvRep);       
-                if (!srvRep.equals("a") ){
-                    System.out.println("Vous avez été trouvé!");
-                    
-            String uti;
-            String modepa;
-            String profe;
-            System.out.println("Modification: \n"); 
-            System.out.println("Entrer vos nouvelles informations: \n"); 
-            do{
-                System.out.println("Nom d'utilisateur: \n");
+            System.out.println("srvRep: " + srvRep);
+            if (!srvRep.equals("a") ){
+                System.out.println("Vous avez été trouvé!");
                 
-                uti = stdIn.readLine();
-                if("".equals(uti)){
-                    System.out.println("Mauvaise entrée, recommencez!");
-                } 
-            }while("".equals(uti));
-            
-            do{
-                System.out.println("Mot de passe: \n");
-            
-                modepa = stdIn.readLine();
-                if("".equals(modepa)){
-                    System.out.println("Mauvaise entrée, recommencez!");
-                } 
-            }while("".equals(modepa));
-            
-            do{
-                System.out.println("Profession: \n");
-            
-                profe = stdIn.readLine();
-                if("".equals(profe)){
-                    System.out.println("Mauvaise entrée, recommencez!");
-                } 
-            }while("".equals(profe));
-                   
-            
-            xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",uti ,modepa, profe, "??");
-            
-            userInput = Menu();
-            outToServer.println(xmlOut + Character.toString((char)4));                    
-                                
-            while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
-                System.out.println("echo: " + srvRep);        
-                
-                                       
-                }
-                else{
-                    System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!"); 
-                }
-        }while("a".equals(srvRep)) ;       
+                String uti;
+                String modepa;
+                String profe;
+                String visi;
+                System.out.println("Modification: \n");
+                System.out.println("Entrer vos nouvelles informations: \n");
+                do{
+                    System.out.println("Nom d'utilisateur: \n");
                     
-        }
-        else if("4".equals(userInput)){
-            
-            System.out.println("Rechercher:");
-            String recherche;
-            recherche = stdIn.readLine();
-            ChercherInformation("Exercice.xml",recherche);
-            userInput = Menu();
-            
-            
+                    uti = stdIn.readLine();
+                    if("".equals(uti)){
+                        System.out.println("Mauvaise entrée, recommencez!");
+                    }
+                }while("".equals(uti));
+                do{
+                    System.out.println("Souhaitez vous être visible?: \n Entrez oui ou non");
+                    
+                    visi = stdIn.readLine();
+                    System.out.print("votre choix : "+visi);
+                    if(!visi.equals("oui") && !visi.equals("non")){
+                        System.out.println("Mauvaise entrée, recommencez!");
+                    }
+                }while(!visi.equals("oui") && !visi.equals("non"));
+                
+                do{
+                    System.out.println("Mot de passe: \n");
+                    
+                    modepa = stdIn.readLine();
+                    if("".equals(modepa)){
+                        System.out.println("Mauvaise entrée, recommencez!");
+                    }
+                }while("".equals(modepa));
+                
+                do{
+                    System.out.println("Profession: \n");       
+                    
+                    profe = stdIn.readLine();
+                    if("".equals(profe)){
+                        System.out.println("Mauvaise entrée, recommencez!");
+                    }
+                }while("".equals(profe));
+                
+                
+                xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",uti, visi ,modepa, profe, "??");
+                
+                userInput = Menu();
+                outToServer.println(xmlOut + Character.toString((char)4));
+                
+                while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
+                    System.out.println("echo: " + srvRep);
+                
+                
+            }
+            else{
+                System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
+            }
+        }while("a".equals(srvRep)) ;
         
-        }
+    }
+    else if("4".equals(userInput)){
         
-     }while(!userInput.equals("5")); 
-     sockClient.close();
+        System.out.println("Rechercher:");
+        String recherche;
+        recherche = stdIn.readLine();
+        ChercherInformation("Exercice.xml",recherche);
+        userInput = Menu();
+        
+        
+        
+    }
+    
+//}while(!userInput.equals("5"));
+        }
 }
 }
 

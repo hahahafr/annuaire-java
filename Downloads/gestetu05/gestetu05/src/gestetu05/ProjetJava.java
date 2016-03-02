@@ -47,6 +47,7 @@ public class ProjetJava {
          catch (FileNotFoundException fnfe) {
            //si le fichier n'existe pas ...     
                 ListeAdmin.add("Admin");
+                ListeAdmin.add("non");
                 ListeAdmin.add("12345678");
                 ListeAdmin.add("Informaticien");
                 GU.EcrireFichierXML(ListeAdmin);
@@ -56,13 +57,12 @@ public class ProjetJava {
               
         // TODO code application logic here
         GU.ListeXML.clear();
-        
         // On ecoute sur le socket TCP serveur
  		try (ServerSocket raspberryPi = new ServerSocket())
  		{
- 			
+                     
  			InetAddress adresseEcoute = InetAddress.getByName("127.0.0.1");
- 			InetSocketAddress socketEcoute = new InetSocketAddress(adresseEcoute, 57000);
+ 			InetSocketAddress socketEcoute = new InetSocketAddress(adresseEcoute, 2009);
  			raspberryPi.bind(socketEcoute);
  			System.out.println("TCP server listening: " + raspberryPi);
  			
