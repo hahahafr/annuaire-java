@@ -1,17 +1,16 @@
 package gestetu05;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+
 import java.io.File;
-import java.io.BufferedWriter;
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import static org.jdom2.filter.Filters.document;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
@@ -38,24 +37,40 @@ Element racine = new Element("repertoire") ;
 Document document = new Document(racine);
 // Création de la liste de STRING pour récupérer les informations du fichier xml
 List<String> ListeXML = new ArrayList<>() ;
+
+// pour la V3 nous avons besoin de créer une liste de compétences par utilisateur
+// donc on va lire le fichier XML, le transformé en Document puis Element JDOM,
+// faire les modifications nécessaire (ajout d'une nouvel utilisateur avec la liste),
+// et re-écrire le fichier
+
+
 int resultatRecherche;
 
 
 synchronized void enregistreXML(String fichier)
 {
+	System.out.println("on rentre dans enregistreXML");
    try
    {
       //On utilise ici un affichage classique avec getPrettyFormat()
       XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
       //Remarquez qu'il suffit simplement de créer une instance de FileOutputStream
       //avec en argument le nom du fichier pour effectuer la sérialisation.
+      System.out.println("enregistrement du fichier suivant:");
+      System.out.println(sortie.outputString(document));
       sortie.output(document, new FileOutputStream(fichier));
    }
-   catch (java.io.IOException e){}
+   catch (java.io.IOException e){
+	   System.err.println("erreur avec l'enregistrement du fichier XML");
+	   System.err.println(e);
+   }
+
+	System.out.println("on sort de enregistreXML");
 }
 
 
 synchronized void EcrireFichierXML(List<String> Liste){   
+	System.out.println("on rentre dans EcrireFichierXML");
     int i=0;    
     int e = Liste.size();
     System.out.println(e);
@@ -80,10 +95,12 @@ synchronized void EcrireFichierXML(List<String> Liste){
       racine.addContent(utilisateur);
       i=i+4;
     };
-    
+
+	System.out.println("on sort de EcrireFichierXML");
     }
 
 void ChercherInformation(String NomFichier, String nom, String mdp){
+	System.out.println("on rentre dans ChercherInformation");
     
     //On crée une instance de SAXBuilder
       SAXBuilder sxb = new SAXBuilder();
@@ -124,10 +141,12 @@ void ChercherInformation(String NomFichier, String nom, String mdp){
       }     
       
    }
-   System.out.println("_-_"+resultatRecherche);
+   System.out.println("resultatRecherche: "+resultatRecherche);
+	System.out.println("on sort de ChercherInformation");
 }
 
 void ModicationXML(String NomFichier, String NomU, String MdpU){
+	System.out.println("on rentre dans ModificationXML");
     List<String> ListeUtilisateur = new ArrayList<>() ;
     //On crée une instance de SAXBuilder
       SAXBuilder sxb = new SAXBuilder();
@@ -171,12 +190,14 @@ void ModicationXML(String NomFichier, String NomU, String MdpU){
    }
    
 }
-   System.out.println("Liste modifiée:"+ListeUtilisateur);
+   System.out.println("Liste modifiée: "+ListeUtilisateur);
    EcrireFichierXML(ListeUtilisateur);
   enregistreXML("Exercice.xml");
+	System.out.println("on sort de ModificationXML");
 }
 
 List<String> LireXML(String NomFichier){
+	System.out.println("on rentre dans LireXML");
     List<String> ListeUtilisateur = new ArrayList<>() ;
     //On crée une instance de SAXBuilder
       SAXBuilder sxb = new SAXBuilder();
@@ -186,12 +207,20 @@ List<String> LireXML(String NomFichier){
          //Le parsing est terminé ;)
          document = sxb.build(new File(NomFichier));
       }
-      catch(JDOMException | IOException e){}
+      catch(JDOMException | IOException e){
+    	  System.err.println("Erreur avec la lecture du fichier XML");
+    	  System.err.println(e);
+      }
+      
+      XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
+      System.out.println("lecture du fichier suivant:");
+      System.out.println(sortie.outputString(document));
 
       //On initialise un nouvel élément racine avec l'élément racine du document.
       racine = document.getRootElement();
    //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
    List listUtilisateurs = racine.getChildren("utilisateur");
+   System.out.println("listUtilisateurs: " + listUtilisateurs);
    //On crée un Iterator sur notre liste
    Iterator i = listUtilisateurs.iterator();
    
@@ -208,13 +237,15 @@ List<String> LireXML(String NomFichier){
       ListeUtilisateur.add(courant.getChild("Profession").getText());         
       
    }
-   System.out.println(ListeUtilisateur);
+   System.out.println("ListeUtilisateur: " + ListeUtilisateur);
+	System.out.println("on sort de LireXML");
    return ListeUtilisateur;
 }
 
-int AjouterUtilisateur(List<String> AjoutUtilisateur,String NomFichier){
-  List<String> ListeUtilisateur = new ArrayList<>();
-  ListeUtilisateur= LireXML(NomFichier);
+int AjouterUtilisateur(List<String> AjoutUtilisateur, List<String> ListeCompetences, String NomFichier){
+	System.out.println("on rentre dans AjouterUtilisateur");
+  //List<String> ListeUtilisateur = new ArrayList<>();
+  //ListeUtilisateur= LireXML(NomFichier);
   int resultatAjout = 0;
     
     //On crée une instance de SAXBuilder
@@ -225,14 +256,28 @@ int AjouterUtilisateur(List<String> AjoutUtilisateur,String NomFichier){
          //Le parsing est terminé ;)
          document = sxb.build(new File(NomFichier));
       }
-      catch(JDOMException | IOException e){}
+      catch(JDOMException | IOException e){
+    	  System.err.println("Erreur dans AjouterUtilisateur de GestionnaireUtilisateur, le fichier n'est pas XML ?");
+    	  System.err.println(e);
+      }
+      XMLOutputter myXMLOutputter = new XMLOutputter();
+      System.out.println("document: \n" + myXMLOutputter.outputString(document));
 
       //On initialise un nouvel élément racine avec l'élément racine du document.
       racine = document.getRootElement();
+      System.out.println("racine: \n" + myXMLOutputter.outputString(racine));
    //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
    List listUtilisateurs = racine.getChildren("utilisateur");
+   System.out.println("listUtilisateurs: " + listUtilisateurs);
    //On crée un Iterator sur notre liste
    Iterator i = listUtilisateurs.iterator(); 
+   
+   // si la liste est vide c'est que le fichier est vide donc on peut ajouter
+   // l'utilisateur sans crainte
+   if (listUtilisateurs.size() == 0)
+   {
+	   resultatAjout = 1;
+   }
    
    while(i.hasNext())
    {
@@ -252,15 +297,57 @@ int AjouterUtilisateur(List<String> AjoutUtilisateur,String NomFichier){
    }
       
 if(resultatAjout== 1){
-  
+	
+	Element nouvelUtilisateur = new Element("utilisateur");
+	Attribute numUtil = new Attribute("NuméroUtilisateur", Integer.toString(listUtilisateurs.size()));
+	nouvelUtilisateur.setAttribute(numUtil);
+	
+	Element nouvelUtilisateur_nom = new Element("nom");
+	nouvelUtilisateur_nom.setText(AjoutUtilisateur.get(0));
+	nouvelUtilisateur.addContent(nouvelUtilisateur_nom);
+
+	Element nouvelUtilisateur_visi = new Element("Visibilite");
+	nouvelUtilisateur_visi.setText(AjoutUtilisateur.get(1));
+	nouvelUtilisateur.addContent(nouvelUtilisateur_visi);
+
+	Element nouvelUtilisateur_MotDePasse = new Element("MotDePasse");
+	nouvelUtilisateur_MotDePasse.setText(AjoutUtilisateur.get(2));
+	nouvelUtilisateur.addContent(nouvelUtilisateur_MotDePasse);
+
+	Element nouvelUtilisateur_profession = new Element("Profession");
+	nouvelUtilisateur_profession.setText(AjoutUtilisateur.get(3));
+	nouvelUtilisateur.addContent(nouvelUtilisateur_profession);
+
+	Element nouvelUtilisateur_competences = new Element("Compétences");
+	if (ListeCompetences != null) {
+		int tailleListe = ListeCompetences.size();
+		int cpt = 0;
+		while (cpt < tailleListe) {
+			Element competence = new Element("Compétence");
+			competence.setText(ListeCompetences.get(cpt));
+			nouvelUtilisateur_competences.addContent(competence);
+			cpt++;
+		}
+	}
+	nouvelUtilisateur.addContent(nouvelUtilisateur_competences);
+	
+	racine.addContent(nouvelUtilisateur);
+	
+	System.out.println("nouvelUtilisateur: " + myXMLOutputter.outputString(nouvelUtilisateur));
+	
+  /*
   ListeUtilisateur.add(AjoutUtilisateur.get(0));
   ListeUtilisateur.add(AjoutUtilisateur.get(1));
   ListeUtilisateur.add(AjoutUtilisateur.get(2));
   ListeUtilisateur.add(AjoutUtilisateur.get(3));
   System.out.println(ListeUtilisateur);
+  
+	
   EcrireFichierXML(ListeUtilisateur);
-  enregistreXML("Exercice.xml");
+  */
+	enregistreXML("Exercice.xml");
 }
+System.out.println("on sort de AjouterUtilisateur");
 return resultatAjout;
 }
 }

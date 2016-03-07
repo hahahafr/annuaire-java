@@ -37,22 +37,27 @@ public class ProjetJava {
             BufferedReader In = new BufferedReader(new FileReader(Fichier));
             //si le fichier existe...
                 //GU.LireXML("Exercice.xml");
-                System.out.println(GU.ListeXML);
+                /*
+            	System.out.println(GU.ListeXML);
                 GU.EcrireFichierXML(GU.LireXML("Exercice.xml"));
-                System.out.println(GU.ListeXML);
+                */
+                GU.LireXML("Exercice.xml");
                 GU.enregistreXML("Exercice.xml");
                 System.out.println("Fichier trouvé!");
             
             } 
          catch (FileNotFoundException fnfe) {
-           //si le fichier n'existe pas ...     
+           //si le fichier n'existe pas ...  
+        	 /*
                 ListeAdmin.add("Admin");
                 ListeAdmin.add("non");
                 ListeAdmin.add("12345678");
                 ListeAdmin.add("Informaticien");
                 GU.EcrireFichierXML(ListeAdmin);
+                */
                 GU.enregistreXML("Exercice.xml");
                 System.out.println("Création d'un fichier!");
+                
             }
               
         // TODO code application logic here

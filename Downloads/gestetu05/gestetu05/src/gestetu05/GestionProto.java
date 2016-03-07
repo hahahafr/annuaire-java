@@ -35,7 +35,33 @@ public class GestionProto {
 		monGU = null;
 	}
 	
-	public String GenererMess(String type, String action, String nomUtilisateur, String visi,String mdp,String Profession, String res)
+	public String GenMessReqAjUt(
+			String nomUtilisateur,
+			String visi,
+			String mdp,
+			String profession,
+			List<String> competences)
+	{
+		System.out.println("dans GenMessReqAjUt au tout début");
+		System.out.println(competences);
+		return GenererMess("requête",
+				"ajoutUtilisateur",
+				nomUtilisateur,
+				visi,
+				mdp,
+				profession,
+				"pas de résultat, c'est une requête pas une réponse...",
+				competences);
+	}
+	
+	public String GenererMess(String type,
+			String action,
+			String nomUtilisateur,
+			String visi,
+			String mdp,
+			String Profession,
+			String res,
+			List<String> competences)
 	{
 		// on prépare le squelette de la réponse
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -45,7 +71,7 @@ public class GestionProto {
 		// on spécifie le type de message
 		Element typeXML = new Element("type");
 		typeXML.setText(type);
-		message.addContent(typeXML);         
+		message.addContent(typeXML);
           
                 
 		// on ajoute le contenu
@@ -69,7 +95,23 @@ public class GestionProto {
                     Element Profes = new Element("Profession");
                     Profes.setText(Profession);
                     message.addContent(Profes);
-                 }
+                    
+                    // on traite la liste des competences
+                    if (competences != null) {
+	                    int tailleCompetences = competences.size();
+	                    System.out.println("dans GenererMess : tailleCompetences = " + tailleCompetences);
+	                    int cpt = 0;
+	                    Element XMLcompetences = new Element("Compétences");
+	                    while (cpt < tailleCompetences) {
+	                    	System.out.println("cpt = " + cpt);
+	                    	Element XMLcompetence = new Element("Compétence");
+	                    	XMLcompetence.setText(competences.get(cpt));
+	                    	XMLcompetences.addContent(XMLcompetence);
+	                    	cpt++;
+	                    }
+	                    message.addContent(XMLcompetences);
+                    }
+                }
                 
                 // Si l' action est connexion ou modification on prend les informtions de connexion
                 if("Connexion".equals(action) || "Modification".equals(action)){
@@ -94,14 +136,12 @@ public class GestionProto {
 		try {
 			sortiePretty.output(document, baos);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		try {
 			System.out.println(baos.toString("UTF-8"));
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -144,7 +184,6 @@ public class GestionProto {
 				try {
 					sortiePretty.output(ceMessage, System.out);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}				
 				
@@ -155,25 +194,49 @@ public class GestionProto {
 				
 				if (action.equals("ajoutUtilisateur"))
 				{       
-                                    List<String> monUser = new ArrayList<String>();
-                                    
-                                          
-                                        String nomUtilisateur = ceMessage.getChild("nom").getText();                                        
-                                        String visi = ceMessage.getChild("Visibilite").getText();
-                                        System.out.println("0000" + visi);
+					// infos personnelles
+					List<String> monUser = new ArrayList<String>();
+					
+					      
+					String nomUtilisateur = ceMessage.getChild("nom").getText();                                        
+					String visi = ceMessage.getChild("Visibilite").getText();
+					System.out.println();
+					System.out.println("visi: " + visi);
 					String Mdp = ceMessage.getChild("MotdePasse").getText();
-                                        String Profession = ceMessage.getChild("Profession").getText();
+					String Profession = ceMessage.getChild("Profession").getText();
 					monUser.add(nomUtilisateur);
-                                        monUser.add(visi);
+					monUser.add(visi);
 					monUser.add(Mdp);
 					monUser.add(Profession);
-                                        System.out.println("aaaaaa" + monUser);
+					System.out.println("liste monUser: " + monUser);
+                                        
+					// liste compétences
+					Element competences = ceMessage.getChild("Compétences");
+					List<Element> listeCompetencesXMLElems = competences.getChildren();
+					List<String> listeCompetencesString = new ArrayList<String>();
+					if (listeCompetencesXMLElems != null) {
+					    int tailleListeCompetencesXML = listeCompetencesXMLElems.size();
+					    int cpt = 0;
+					    while (cpt < tailleListeCompetencesXML) {
+					    	listeCompetencesString.add(listeCompetencesXMLElems.get(cpt).getText());
+					    	cpt++;
+					    }
+					}
+					System.out.println("liste listeCompetencesString: " + listeCompetencesString);
+                                        
 					int result;
-					result=monGU.AjouterUtilisateur(monUser, "Exercice.xml");
+					result=monGU.AjouterUtilisateur(monUser, listeCompetencesString, "Exercice.xml");
 					System.out.println("Resultat de l'ajout:" + result);
                                     if (1 == result){
                                         
-                                        return GenererMess("réponse", "ajoutUtilisateur",nomUtilisateur,visi,Mdp, "Profession", "1");
+                                        return GenererMess("réponse",
+                                        		"ajoutUtilisateur",
+                                        		nomUtilisateur,
+                                        		visi,
+                                        		Mdp,
+                                        		"Profession",
+                                        		"1",
+                                        		null);
                                     }else{
                                         
                                         return "a";//GenererMess("réponse", "Connexion",nomUtilisateur,Mdp, "Profession", "0");
@@ -192,7 +255,14 @@ public class GestionProto {
                                     System.out.println("Resultat de la connexion:" + monGU.resultatRecherche);
                                     if (monGU.resultatRecherche == 1){
                                         
-                                        return GenererMess("réponse", "Connexion",nomUtilisateur,"visi",Mdp, "Profession", "1");
+                                        return GenererMess("réponse",
+                                        		"Connexion",
+                                        		nomUtilisateur,
+                                        		"visi",
+                                        		Mdp,
+                                        		"Profession",
+                                        		"1",
+                                        		null);
                                     }else{
                                         
                                         return "a";//GenererMess("réponse", "Connexion",nomUtilisateur,Mdp, "Profession", "0");
@@ -212,7 +282,14 @@ public class GestionProto {
                                     if (monGU.resultatRecherche == 1){
                                         
                                         monGU.ModicationXML("Exercice.xml", nomUtilisateur, Mdp);
-                                        return GenererMess("réponse", "Connexion",nomUtilisateur, "visi",Mdp, "Profession", "1");
+                                        return GenererMess("réponse",
+                                        		"Connexion",
+                                        		nomUtilisateur,
+                                        		"visi",
+                                        		Mdp,
+                                        		"Profession",
+                                        		"1",
+                                        		null);
                                     }else{
                                         
                                         return "a";
@@ -227,7 +304,6 @@ public class GestionProto {
 				try {
 					sortiePretty.output(ceMessage, System.out);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				// IHM??
@@ -239,15 +315,14 @@ public class GestionProto {
 		}
 		
 		} catch (NoSuchElementException nsee) {
-			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur", "visi" ,"MotDePasse", "Profession", "-1");
+			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur", "visi" ,"MotDePasse", "Profession", "-1", null);
 		}
 		} catch (JDOMException je) {
-			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur" ,"visi","MotDePasse", "Profession", "-1");
+			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur" ,"visi","MotDePasse", "Profession", "-1", null);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return GenererMess("réponse", "Test","NomUtilisateur", "visi" ,"MotDePasse", "Profession", "1");
+		return GenererMess("réponse", "Test","NomUtilisateur", "visi" ,"MotDePasse", "Profession", "1", null);
 		
 		
 	}

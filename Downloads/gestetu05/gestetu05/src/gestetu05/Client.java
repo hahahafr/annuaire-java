@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import javafx.scene.Node;
@@ -42,6 +43,8 @@ import org.jdom2.output.XMLOutputter;
  * @author ALEX-MOMO
  */
 public class Client {
+	
+	private static String userConnecte = null;
 
         static List<String> LireMail(String NomFichier){
     Element racine = new Element("mail") ;
@@ -150,8 +153,8 @@ public class Client {
                 
                     }
                     Liste=LireMail("mail.xml");
-                    System.out.println("ffff"+Liste);
-                    System.out.println("lol"+userInput);
+                    System.out.println("listeMail: "+Liste);
+                    System.out.println("userInput: "+userInput);
                     Liste.add(uti);
                     Liste.add(userInput);
                     Liste.add(mail);
@@ -159,6 +162,7 @@ public class Client {
                     
                     
                     while(i<j){
+                        System.out.println("debut boucle, i=" + i + " ,j=" + j);
                         
                         Element liste = new Element("liste");
                         Attribute emetteur= new Attribute("emetteur",Liste.get(i));
@@ -172,6 +176,7 @@ public class Client {
                         liste.addContent(message);
                         racine.addContent(liste);
                                 i=i+3;
+                                System.out.println("fin boucle, i=" + i + " ,j=" + j);
                     }
                     
                     try
@@ -300,6 +305,280 @@ public class Client {
       
    }
 }
+    
+    /*
+     * Methode inspiree de ChercherInformation :
+     * - On cherche l'utilisateur dans le fichier XML
+     * - On affiche ses compétences
+     * 
+     * On retourne si l'utilisateur a été trouvé ou non
+     */
+    static Boolean afficherCompetences(String fichier, String utilisateur) {
+
+        Element racine = new Element("repertoire") ;
+        Document document = new Document(racine);
+        //On crée une instance de SAXBuilder
+          SAXBuilder sxb = new SAXBuilder();
+          try
+          {
+             //On crée un nouveau document JDOM avec en argument le fichier XML
+             //Le parsing est terminé ;)
+             document = sxb.build(new File(fichier));
+          }
+          catch(JDOMException | IOException e){
+        	  System.err.println(e);
+        	  System.err.println("Fichier XML invalide");
+          }
+
+          //On initialise un nouvel élément racine avec l'élément racine du document.
+          racine = document.getRootElement();
+       //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+       List listUtilisateurs = racine.getChildren("utilisateur");
+       //On crée un Iterator sur notre liste
+       Iterator i = listUtilisateurs.iterator(); 
+       Boolean userTrouve = false;
+       while(i.hasNext()) {
+    	      //On recrée l'Element courant à chaque tour de boucle afin de
+    	      //pouvoir utiliser les méthodes propres aux Element comme :
+    	      //sélectionner un nœud fils, modifier du texte, etc...
+    	      Element courant = (Element)i.next();
+    	      if (courant.getChild("nom").getText().equalsIgnoreCase(utilisateur)
+    	    		  && courant.getChild("Visibilite").getText().equalsIgnoreCase("oui")) {
+    	    	  userTrouve = true;
+    	    	  //System.out.println(courant);
+    	    	  System.out.println("Utilisateur :" + utilisateur);
+    	    	  System.out.println("Competences : ");
+    	    	  int cpt = 0;
+    	    	  List<Element> listeElementsCompetences = courant.getChild("Compétences").getChildren("Compétence");
+    	    	  if (listeElementsCompetences != null) {
+	    	    	  while (cpt < listeElementsCompetences.size()) {
+	    	    		  System.out.println(listeElementsCompetences.get(cpt).getText());
+	    	    		  cpt++;
+	    	    	  }
+    	    	  }
+    	      }
+    	   
+       }
+       return userTrouve;
+    }
+    
+    /*
+     * Ajoute ou supprime une recommandation
+     * 
+     * retourne si oui ou non l'action a été effectué
+     */
+    static Boolean recommandation(String action, String nomRecommandeur, String nomRecommande, String competence, String fichier) {
+    	Document document = null;
+    	Element racine = null;
+    	Boolean actionEffectuee = false;
+
+    	// on fait sxb xml :
+    	//On crée une instance de SAXBuilder
+    	SAXBuilder sxb = new SAXBuilder();
+    	try
+    	{
+    		//On crée un nouveau document JDOM avec en argument le fichier XML
+    		//Le parsing est terminé ;)
+    		document = sxb.build(new File(fichier));
+    	}
+    	catch(JDOMException | IOException e){
+    		System.err.println(e);
+    		System.err.println("Fichier XML invalide");
+    		e.printStackTrace();
+    	}
+
+    	//On initialise un nouvel élément racine avec l'élément racine du document.
+    	racine = document.getRootElement();
+    	//On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+    	List<Element> listUtilisateurs = racine.getChildren("utilisateur");
+    	//On crée un Iterator sur notre liste
+    	Iterator<Element> i = listUtilisateurs.iterator(); 
+
+    	Boolean userRecommandeTrouve = false;
+    	Boolean userRecommandeurTrouve = false;
+    	Boolean competenceTrouve = false;
+
+    	// on cherche user nomRecommandeur :
+    	while(i.hasNext() && userRecommandeurTrouve == false) {
+
+    		//On recrée l'Element courant à chaque tour de boucle afin de
+    		//pouvoir utiliser les méthodes propres aux Element comme :
+    		//sélectionner un nœud fils, modifier du texte, etc...
+    		Element courant = (Element)i.next();
+    		if (courant.getChild("nom").getText().equalsIgnoreCase(nomRecommandeur)) {
+    			userRecommandeurTrouve = true;
+    		}
+    	}
+
+    	if (userRecommandeurTrouve == true) {
+    		// on cherche user nomRecommande :
+    		i = listUtilisateurs.iterator();
+    		while(i.hasNext() && userRecommandeTrouve == false) {
+
+    			//On recrée l'Element courant à chaque tour de boucle afin de
+    			//pouvoir utiliser les méthodes propres aux Element comme :
+    			//sélectionner un nœud fils, modifier du texte, etc...
+    			Element courant = (Element)i.next();
+    			if (courant.getChild("nom").getText().equalsIgnoreCase(nomRecommande)) {
+    				userRecommandeTrouve = true;
+    				List<Element> listeCompetences = courant.getChild("Compétences").getChildren("Compétence");
+    				Iterator<Element> iterateurListeCompetences = listeCompetences.iterator();
+    				while (iterateurListeCompetences.hasNext() && competenceTrouve == false && listeCompetences.size() > 0) {
+    					//On recrée l'Element courant à chaque tour de boucle afin de
+    					//pouvoir utiliser les méthodes propres aux Element comme :
+    					//sélectionner un nœud fils, modifier du texte, etc...
+    					Element ElementCompetenceCourant = (Element)iterateurListeCompetences.next();
+    					if (ElementCompetenceCourant.getText().equalsIgnoreCase(competence)) {
+    						competenceTrouve = true;
+
+    						// on ajoute ou supprime la recommandation :
+
+    						Element recommandation = new Element("Recommandation");
+    						Attribute provenance = new Attribute("Provenance", nomRecommandeur);
+    						recommandation.setAttribute(provenance);
+    						recommandation.setText(competence);
+
+    						if (action.equals("ajout")) {
+
+    							// s'il n'y a pas de recommandations du tout
+    							if (courant.getChild("Recommandations") == null) {
+    								Element recommandations = new Element("Recommandations");
+    								recommandations.addContent(recommandation);
+    								courant.addContent(recommandations);
+    								actionEffectuee = true;
+    							} else {
+    								Boolean recommandationTrouve = false;
+    								int tailleListeRecommandations = 0;
+    								List<Element> listeRecommandations = null;
+    								listeRecommandations = courant.getChild("Recommandations").getChildren();
+    								tailleListeRecommandations = listeRecommandations.size();
+
+    								// s'il y a des recommandations
+    								if (tailleListeRecommandations > 0) {
+    									int cpt = 0;
+    									do {
+    										if ( recommandation.getText().equals(listeRecommandations.get(cpt).getText())
+    												&& recommandation.getAttribute("Provenance").getValue().equals(listeRecommandations.get(cpt).getAttribute("Provenance").getValue()) ) {
+    											recommandationTrouve = true;
+    										}
+    										cpt++;
+    									} while (cpt < tailleListeRecommandations && !recommandationTrouve);
+
+    									// mais que celle-ci n'a pas été trouvé
+    									if (!recommandationTrouve) {
+    										courant.getChild("Recommandations").addContent(recommandation);
+    										actionEffectuee = true;
+    									}
+    									// on en déduit qu'elle existe déjà
+    									else {
+    										System.err.print("Erreur ajout recommandation : de \""+nomRecommandeur+"\" vers \""+nomRecommande+"\" pour \""+competence+"\", ");
+    										System.err.println("recommandation déjà existante !");
+    										
+
+    									}
+    								} else {
+    									courant.getChild("Recommandations").addContent(recommandation);
+    									actionEffectuee = true;
+    								}
+
+    							}
+    						} else if (action.equals("suppression")) {
+    							if (courant.getChild("Recommandations") == null) {
+    								System.err.println("Erreur suppression recommandation : pas de recommandations pour \"" + nomRecommande + "\" !");
+    								    							
+    							} else {
+
+    								Boolean recommandationTrouve = false;
+    								int tailleListeRecommandations = 0;
+    								List<Element> listeRecommandations = null;
+    								listeRecommandations = courant.getChild("Recommandations").getChildren();
+    								tailleListeRecommandations = listeRecommandations.size();
+
+    								if (tailleListeRecommandations > 0) {
+    									int cpt = 0;
+    									do {
+    										if ( recommandation.getText().equals(listeRecommandations.get(cpt).getText())
+    												&& recommandation.getAttribute("Provenance").getValue().equals(listeRecommandations.get(cpt).getAttribute("Provenance").getValue()) ) {
+    											recommandationTrouve = true;
+    										}
+    										cpt++;
+    									} while (cpt < tailleListeRecommandations && !recommandationTrouve);
+    								}
+    								
+    								if (recommandationTrouve) {
+    									Element ElementASupprimer = null;
+    									Boolean ElementTrouve = false;
+    									List<Element> ListDesElementsRecommandation = courant.getChild("Recommandations").getChildren();
+    									int tailleListe = ListDesElementsRecommandation.size();
+    									int cpt = 0;
+    									if (tailleListe > 0) {
+    										while (cpt < tailleListe && !ElementTrouve) {
+	    										ElementASupprimer = ListDesElementsRecommandation.get(cpt);
+	    										if (ElementASupprimer.getText().equals(recommandation.getText())
+	    												&& ElementASupprimer.getAttribute("Provenance").getValue().equals(recommandation.getAttribute("Provenance").getValue())) {
+	    											ElementTrouve = true;
+	    										}
+	    										cpt++;
+    										}
+    									}
+    									if (courant.getChild("Recommandations").removeContent(ElementASupprimer) == false) {
+        									System.err.print("Erreur suppresson recommandation : de \""+nomRecommandeur+"\" vers \""+nomRecommande+"\" pour \""+competence+"\", ");
+        									System.err.println("suppression non réalisée !");
+        									
+        								} else {
+        									actionEffectuee = true;
+        								}
+    								} else {
+    									System.err.print("Erreur suppresson recommandation : de \""+nomRecommandeur+"\" vers \""+nomRecommande+"\" pour \""+competence+"\", ");
+    									System.err.println("recommandation inexistante !");
+    								}
+    								
+    								
+    							}
+
+    						} else {
+    							System.err.println("Erreur recommandation : action autre que \"suppression\" ou \"ajout\" !");
+    							
+    						}
+    					}
+
+    				}
+    				if (competenceTrouve == false) {
+    					System.err.println("La compétence \"" + competence + "\" est introuvable chez l'utilisateur \"" + nomRecommande + "\" !");
+    					
+    				}
+
+    			}
+
+    			// on re-ecrit le xml
+    			try
+    			{
+    				//On utilise ici un affichage classique avec getPrettyFormat()
+    				XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
+    				//Remarquez qu'il suffit simplement de créer une instance de FileOutputStream
+    				//avec en argument le nom du fichier pour effectuer la sérialisation.
+    				System.out.println("enregistrement du fichier suivant:");
+    				System.out.println(sortie.outputString(document));
+    				sortie.output(document, new FileOutputStream(fichier));
+    			}
+    			catch (java.io.IOException e){
+    				System.err.println("erreur avec l'enregistrement du fichier XML");
+    				System.err.println(e);
+    			}
+    		}
+
+    		if (userRecommandeTrouve == false) {
+    			System.err.println("L'utilisateur \""+nomRecommande+"\" qui devait recevoir la recommandation n'a pas été trouvé !");
+    			
+    		}
+    	}
+    	else {
+    		System.err.println("L'utilisateur \""+nomRecommandeur+"\" (qui veut recommander \""+nomRecommande+"\") n'a pas été trouvé !");
+    		
+    	}
+    	return actionEffectuee;
+    }
+    
    static void LireMailCo(String NomFichier, String uti){
     Element racine = new Element("mail") ;
     Document document = new Document(racine);
@@ -351,11 +630,17 @@ public class Client {
         System.out.println("############ --> Modification : tapez 3 ##########################");
         System.out.println("############ --> Rechercher : tapez 4 ##########################");
         System.out.println("############ --> Quitter : tapez 5 ##########################");
+        System.out.println("############ --> Recommandations : tapez 6 ##########################");
         
         if ((userInput = stdIn.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
 				System.out.println("Votre choix : " + userInput);
         }
-        }while(!"1".equals(userInput) && !"2".equals(userInput)&& !"3".equals(userInput)&& !"4".equals(userInput)&& !"5".equals(userInput));
+        }while(!"1".equals(userInput)
+        		&& !"2".equals(userInput)
+        		&& !"3".equals(userInput)
+        		&& !"4".equals(userInput)
+        		&& !"5".equals(userInput)
+        		&& !"6".equals(userInput));
             return userInput;
         }
     public static void main(String[] args) throws IOException, JDOMException {
@@ -376,10 +661,10 @@ public class Client {
 System.out.println("################################################################");
 System.out.println("################################################################");
 System.out.println("############ BIENVENUE DANS NOTRE PROJET JAVA ##################");
-System.out.println("################################################################");     
-userInput = Menu();
-//do{
-    System.out.println("TEST:" + userInput);
+System.out.println("################################################################");   
+do{  
+	userInput = Menu();
+    System.out.println("userInput:" + userInput);
     if("1".equals(userInput)){
         
         String utilisateur;
@@ -408,7 +693,7 @@ userInput = Menu();
             
             
             
-            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur, "visi" ,mdp, "Profession","??");
+            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur, "visi" ,mdp, "Profession","??",null);
             outToServer.println(xmlOut + Character.toString((char)4));
             
             
@@ -416,6 +701,10 @@ userInput = Menu();
             System.out.println("srvRep: " + srvRep);
             if (!srvRep.equals("a") ){
                 System.out.println("Vous êtes bien connecté!");
+                
+                userConnecte = utilisateur;
+                
+                /*
                 ServerSocket ss = null;
                 int h;
                 h = 50000+LireXML("Exercice.xml",utilisateur);
@@ -424,7 +713,7 @@ userInput = Menu();
                System.out.println(utilisateur + "est l'utilisateur");
                System.out.println("le port est "+h);
                Mess(utilisateur);
-               
+               */
                
                //userInput = Menu();
             }
@@ -452,10 +741,10 @@ userInput = Menu();
                 } 
             }while("".equals(utilisateur));
             do{
-                System.out.println("Souhaitez vous être visible?: \n Entrez oui ou non");
+                System.out.println("Souhaitez vous être visible?: \n Entrez oui ou non\n");
                 
                 visi = stdIn.readLine();
-                System.out.print("votre choix : "+visi);
+                System.out.println("votre choix : "+visi);
                 if(!visi.equals("oui") && !visi.equals("non")){
                     System.out.println("Mauvaise entrée, recommencez!");
                 } 
@@ -479,9 +768,38 @@ userInput = Menu();
                 } 
             }while("".equals(prof));
             
+            // saisie des compétences
+            List<String> listeCompetencesSaisies = new ArrayList<String>();
+            String competenceSaisie;
+
+            System.out.println("Rentrez vos compétences");
+            System.out.println("une par ligne, finissez par \"fin\" (sans les guillemets) :");
+        	Boolean saisieListeFinie = false;
+        	Boolean saisieValide = false;
+            do {
+            	saisieValide = false;
+            	competenceSaisie = stdIn.readLine();
+            	if (competenceSaisie.equals("fin")) {
+            		saisieListeFinie = true;
+            		saisieValide = true;
+            	} else if (competenceSaisie.equals("")) {
+            		System.out.println("La dernière compétence saisie est vide, veuillez recommencer :");
+            	} else if (listeCompetencesSaisies.contains(competenceSaisie)) {
+            		System.out.println("La compétence saisie existe déjà, veuillez recommencer :");
+            	} else {
+                	saisieValide = true;
+            		listeCompetencesSaisies.add(competenceSaisie);
+            		System.out.println("Compétence : \"" + competenceSaisie + "\" ajoutée, veuillez continuer :");
+            	}
+            } while(!saisieValide || !saisieListeFinie);
+            System.out.println(listeCompetencesSaisies.size() + " compétences saisies :");
+            System.out.println("listeCompetencesSaisies: " + listeCompetencesSaisies);
             
-            xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",utilisateur,visi ,mdp, prof, "??");
             
+
+            System.out.println("avant le GenMessReqAjUt");
+            xmlOut = GP.GenMessReqAjUt(utilisateur,visi ,mdp, prof, listeCompetencesSaisies);
+            System.out.println("aprés le GenMessReqAjUt");
             outToServer.println(xmlOut + Character.toString((char)4));
             
             srvRep = inFromServer.readLine();
@@ -527,7 +845,7 @@ userInput = Menu();
             
             
             
-            xmlOut = GP.GenererMess("requête", "Modification",utilisateur,"visu" ,mdp, "Profession","??");
+            xmlOut = GP.GenererMess("requête", "Modification",utilisateur,"visu" ,mdp, "Profession","??",null);
             outToServer.println(xmlOut + Character.toString((char)4));
             
             
@@ -579,7 +897,7 @@ userInput = Menu();
                 }while("".equals(profe));
                 
                 
-                xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",uti, visi ,modepa, profe, "??");
+                xmlOut = GP.GenererMess("requête", "ajoutUtilisateur",uti, visi ,modepa, profe, "??",null);
                 
                 userInput = Menu();
                 outToServer.println(xmlOut + Character.toString((char)4));
@@ -606,10 +924,66 @@ userInput = Menu();
         
         
     }
+    else if("6".equals(userInput)){
+        
+
+        // saisie de l'utilisateur a recommander
+
+        System.out.println("Rentrez le nom d'utilisateur a recommander :");
+    	Boolean saisieValide = false;
+        String user;
+        do {
+        	user = stdIn.readLine();
+        	if (user.equals("") || afficherCompetences("Exercice.xml",user) == false) {
+        		System.err.println("Nom d'utilisateur invalide, recommencez :");
+        	} else {
+        		saisieValide = true;
+        	}
+        } while(!saisieValide);
+        
+        System.out.println("Rentrez \"suppression\" ou \"ajout\" :");
+    	saisieValide = false;
+        String action;
+        do {
+        	action = stdIn.readLine();
+        	if (!action.equals("ajout") && !action.equals("suppression")) {
+        		System.err.println("Action invalide, recommencez :");
+        	} else {
+        		saisieValide = true;
+        	}
+        } while(!saisieValide);
+
+        System.out.println("Rentrez la compétence :");
+        String competence;
+        saisieValide = false;
+        do {
+        	competence = stdIn.readLine();
+        	if (competence.equals("")) {
+        		System.err.println("Compétence vide, recommencez :");
+        	} else {
+        		saisieValide = true;
+        	}
+        } while(!saisieValide);
+        
+        Boolean retRecommandation = recommandation(action,userConnecte,user,competence,"Exercice.xml");
+        if (retRecommandation) {
+        	System.out.println("action effecutée !");
+        } else {
+        	System.err.println("action pas effecutée !");
+        }
+        
+        
+        
+        
+    }
     
-//}while(!userInput.equals("5"));
+}while(true);
+        } catch (IOException e) {
+        	System.err.println("Problème avec le socket de connexion au serveur !");
+        	e.printStackTrace();
         }
 }
+    
 }
 
 
