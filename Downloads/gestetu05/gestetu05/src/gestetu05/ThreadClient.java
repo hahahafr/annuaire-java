@@ -34,7 +34,7 @@ class ThreadClient extends Thread {
 					buf = buf + clientInput + "\n";
 					System.out.println("got:\n" + buf);
 					dataSent = notreGestionProto.traitementReq(buf);
-					outToClient.println(dataSent);
+					outToClient.println(dataSent + Character.toString((char)4));
 					System.out.println("sent:\n" + dataSent);
 					buf = "";
 				} 
@@ -42,7 +42,7 @@ class ThreadClient extends Thread {
 				{
 					System.out.println("got:\n" + buf);
 					dataSent = notreGestionProto.traitementReq(buf);
-					outToClient.println(dataSent);
+					outToClient.println(dataSent + Character.toString((char)4));
 					System.out.println("sent:\n" + dataSent);
 					buf = "";
 				}

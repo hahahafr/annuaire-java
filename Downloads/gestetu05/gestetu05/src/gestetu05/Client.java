@@ -631,6 +631,7 @@ public class Client {
         System.out.println("############ --> Rechercher : tapez 4 ##########################");
         System.out.println("############ --> Quitter : tapez 5 ##########################");
         System.out.println("############ --> Recommandations : tapez 6 ##########################");
+        System.out.println("############ --> Afficher Liste Utilisateurs : tapez 7 ############");
         
         if ((userInput = stdIn.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
 				System.out.println("Votre choix : " + userInput);
@@ -640,7 +641,8 @@ public class Client {
         		&& !"3".equals(userInput)
         		&& !"4".equals(userInput)
         		&& !"5".equals(userInput)
-        		&& !"6".equals(userInput));
+        		&& !"6".equals(userInput)
+        		&& !"7".equals(userInput));
             return userInput;
         }
     public static void main(String[] args) throws IOException, JDOMException {
@@ -649,6 +651,7 @@ public class Client {
         GestionProto GP = new GestionProto();
         String userInput;
         String srvRep;
+        Document docXMLRep;
         String xmlOut;
         GestionnaireUtilisateur monGU = null;
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
@@ -672,56 +675,67 @@ do{
         
         System.out.println("Connexion: \n");
         System.out.println("Entrer vos informations: \n"); 
-        do{
-            do{
-                System.out.println("Nom d'utilisateur: \n");
-                
-                utilisateur = stdIn.readLine();
-                if("".equals(utilisateur)){
-                    System.out.println("Mauvaise entrée, recommencez!");
-                } 
-            }while("".equals(utilisateur));
-            
-            do{
-                System.out.println("Mot de passe: \n");
-            
-                mdp = stdIn.readLine();
-                if("".equals(mdp)){
-                    System.out.println("Mauvaise entrée, recommencez!");
-                } 
-            }while("".equals(mdp));
-            
-            
-            
-            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur, "visi" ,mdp, "Profession","??",null);
-            outToServer.println(xmlOut + Character.toString((char)4));
-            
-            
-            srvRep = inFromServer.readLine();
-            System.out.println("srvRep: " + srvRep);
-            if (!srvRep.equals("a") ){
-                System.out.println("Vous êtes bien connecté!");
-                
-                userConnecte = utilisateur;
-                
-                /*
-                ServerSocket ss = null;
-                int h;
-                h = 50000+LireXML("Exercice.xml",utilisateur);
-                LireMailCo("mail.xml",utilisateur);
-               ss = connexion(h, utilisateur);
-               System.out.println(utilisateur + "est l'utilisateur");
-               System.out.println("le port est "+h);
-               Mess(utilisateur);
-               */
-               
-               //userInput = Menu();
-            }
-            else{
-                System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
-            }
-        }while("a".equals(srvRep)) ;       
-        
+        try {
+	        do{
+	            do{
+	                System.out.println("Nom d'utilisateur: \n");
+	                
+	                utilisateur = stdIn.readLine();
+	                if("".equals(utilisateur)){
+	                    System.out.println("Mauvaise entrée, recommencez!");
+	                } 
+	            }while("".equals(utilisateur));
+	            
+	            do{
+	                System.out.println("Mot de passe: \n");
+	            
+	                mdp = stdIn.readLine();
+	                if("".equals(mdp)){
+	                    System.out.println("Mauvaise entrée, recommencez!");
+	                } 
+	            }while("".equals(mdp));
+	            
+	            
+	            
+	            xmlOut = GP.GenererMess("requête", "Connexion",utilisateur, "visi" ,mdp, "Profession","??",null);
+	            outToServer.println(xmlOut + Character.toString((char)4));
+	            
+	            
+	            //srvRep = inFromServer.readLine();
+	            
+	            //penser a catch OutOfMemoryError et INdexOUutOFBunds
+	        	srvRep = GP.RecevoirMessRzo(inFromServer);
+	            System.out.println("srvRep: " + srvRep);
+	            docXMLRep = GP.LireMess(srvRep);
+	            if (docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("Connexion")
+	            		&& docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")){
+	                System.out.println("Vous êtes bien connecté!");
+	                
+	                userConnecte = utilisateur;
+	                
+	                /*
+	                ServerSocket ss = null;
+	                int h;
+	                h = 50000+LireXML("Exercice.xml",utilisateur);
+	                LireMailCo("mail.xml",utilisateur);
+	               ss = connexion(h, utilisateur);
+	               System.out.println(utilisateur + "est l'utilisateur");
+	               System.out.println("le port est "+h);
+	               Mess(utilisateur);
+	               */
+	               
+	               //userInput = Menu();
+	            }
+	            else{
+	                System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
+	            }
+	        }while(!docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("Connexion")
+            		|| !docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")) ;       
+
+        } catch (OutOfMemoryError | IndexOutOfBoundsException e) {
+            System.err.println("Message du serveur trop gros, invalide");
+            System.err.println(e);
+        }
     } 
     else if ("2".equals(userInput)){
         String utilisateur;
@@ -975,6 +989,36 @@ do{
         
         
         
+    } 
+    else if("7".equals(userInput)){
+    	
+    	Document laRequeteXML = new Document();
+    	Element dasProtokol = new Element("dasProtokol");
+    	laRequeteXML.setRootElement(dasProtokol);
+    	Element message = new Element("message");
+    	dasProtokol.addContent(message);
+    	Element type = new Element("type");
+    	type.setText("requête");
+    	message.addContent(type);
+    	Element action = new Element("action");
+    	action.setText("afficherListeUtilisateurs");
+    	message.addContent(action);
+    	
+    	XMLOutputter monXMLOutputter = new XMLOutputter();
+    	String laRequeteXMLEnCaracteres = monXMLOutputter.outputString(laRequeteXML);
+    	
+    	outToServer.println(laRequeteXMLEnCaracteres + Character.toString((char)4));
+    	srvRep = GP.RecevoirMessRzo(inFromServer);
+    	
+    	Document repDocXML = GP.LireMess(srvRep);
+    	List<Element> listeUsers = repDocXML.getRootElement().getChild("message").getChild("donnees").getChildren();
+    	Iterator<Element> iterateurListeUsers = listeUsers.iterator();
+    	
+    	while (iterateurListeUsers.hasNext()) {
+    		Element ElementActuel = iterateurListeUsers.next();
+    		System.out.println("nom: "+ElementActuel.getChild("nom").getText()+" | profession: "+ElementActuel.getChild("Profession").getText());
+    	}
+    	
     }
     
 }while(true);

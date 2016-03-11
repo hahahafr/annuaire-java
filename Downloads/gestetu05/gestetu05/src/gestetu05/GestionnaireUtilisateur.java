@@ -145,6 +145,31 @@ void ChercherInformation(String NomFichier, String nom, String mdp){
 	System.out.println("on sort de ChercherInformation");
 }
 
+List<Element> getListeUtilisateurs(String NomFichier) {
+		System.out.println("on rentre dans getListeUtilisateurs");
+	    
+	    //On crée une instance de SAXBuilder
+	      SAXBuilder sxb = new SAXBuilder();
+	      try
+	      {
+	         //On crée un nouveau document JDOM avec en argument le fichier XML
+	         //Le parsing est terminé ;)
+	         document = sxb.build(new File(NomFichier));
+	      }
+	      catch(JDOMException | IOException e){
+	    	  System.err.println("Erreur avec la lecture du fichier XML");
+	    	  System.err.println(e);
+	      }
+
+	      //On initialise un nouvel élément racine avec l'élément racine du document.
+	      racine = document.getRootElement();
+	   //On crée une List contenant tous les noeuds "utilisateur" de l'Element racine
+	   List<Element> listUtilisateurs = racine.getChildren("utilisateur");
+	   
+	   return listUtilisateurs;
+	 
+}
+
 void ModicationXML(String NomFichier, String NomU, String MdpU){
 	System.out.println("on rentre dans ModificationXML");
     List<String> ListeUtilisateur = new ArrayList<>() ;
@@ -350,4 +375,7 @@ if(resultatAjout== 1){
 System.out.println("on sort de AjouterUtilisateur");
 return resultatAjout;
 }
+
+
+
 }

@@ -1,12 +1,11 @@
 package gestetu05;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -14,11 +13,9 @@ import java.util.NoSuchElementException;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.filter.ElementFilter;
+import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.jdom2.util.IteratorIterable;
-import org.jdom2.input.SAXBuilder;
 
 public class GestionProto {
 	
@@ -52,6 +49,15 @@ public class GestionProto {
 				profession,
 				"pas de résultat, c'est une requête pas une réponse...",
 				competences);
+	}
+	
+	public Document LireMess(String mess) throws JDOMException, IOException {
+		
+		SAXBuilder sxb = new SAXBuilder();
+		Document reqXML = sxb.build(new StringReader(mess));		
+		
+		return reqXML;
+		
 	}
 	
 	public String GenererMess(String type,
@@ -148,17 +154,143 @@ public class GestionProto {
 		return baos.toString();
 	}
 	
+	public String RecevoirMessRzo(BufferedReader in) throws IndexOutOfBoundsException, IOException {
+		
+		String clientInput;
+		String buf = "";
+		
+		char[] monBuffer;
+		char[] charArrayOfclientInput;
+		
+		int tailleBuffer = 99999;
+		int positionDansBuffer = 0;
+		int tailleDeLaLigneRecue = 0;
+		
+		monBuffer = new char[tailleBuffer];
+		
+		
+		
+		
+		System.out.println("rzo1");
+		clientInput = in.readLine();
+		
+		
+		if (clientInput.equals("a")) {
+			return "a";
+		}
+		
+		System.out.println("rzo2");
+		while(clientInput != null
+				&& !clientInput.endsWith("</dasProtokol>" + Character.toString((char)4))
+				&& !clientInput.endsWith(Character.toString((char)4))) {
+
+			System.out.println("rzo3: " + new String(monBuffer, 0, positionDansBuffer));
+			System.out.println("rzo3: " + buf);
+			
+				// on ajoute la ligne recue au message que l'on reconstruit
+				
+				charArrayOfclientInput = clientInput.toCharArray();
+				tailleDeLaLigneRecue = charArrayOfclientInput.length;
+				
+				if (tailleDeLaLigneRecue + positionDansBuffer > tailleBuffer) {
+					throw new IndexOutOfBoundsException("Message trop gros, debordement de la memoire tampon");
+				}
+				
+				System.arraycopy(charArrayOfclientInput,
+						0,
+						monBuffer,
+						positionDansBuffer,
+						tailleDeLaLigneRecue);
+				
+				charArrayOfclientInput = null;
+				
+				positionDansBuffer = positionDansBuffer + tailleDeLaLigneRecue;
+				
+				buf = buf + clientInput + "\n";
+				System.out.println("rzo4: "  + new String(monBuffer, 0, positionDansBuffer));
+				System.out.println("rzo4: "  + buf);
+				
+				// on recupere la ligne suivante
+				clientInput = in.readLine();
+				System.out.println("rzo5");
+		}
+
+		System.out.println("fin while");
+		System.out.println("rzo6: " + new String(monBuffer, 0, positionDansBuffer));
+		System.out.println("rzo6: " + buf);
+			// la requete est entierement sur une ligne
+			if (clientInput.endsWith("</dasProtokol>" + Character.toString((char)4)))
+			{
+
+				System.out.println("rzo7: " + new String(monBuffer, 0, positionDansBuffer));
+				System.out.println("rzo7: " + buf);
+				// on enleve le caractere \4 (EOT) de la chaine recue
+				clientInput = (String) clientInput.subSequence(0, clientInput.length() - 1);
+				
+				// on rajoute la derniere ligne dans le buffer et on le renvoi
+				
+				charArrayOfclientInput = clientInput.toCharArray();
+				tailleDeLaLigneRecue = charArrayOfclientInput.length;
+				
+				if (tailleDeLaLigneRecue + positionDansBuffer > tailleBuffer) {
+					throw new IndexOutOfBoundsException("Message trop gros, debordement de la memoire tampon");
+				}
+				
+				System.arraycopy(charArrayOfclientInput,
+						0,
+						monBuffer,
+						positionDansBuffer,
+						tailleDeLaLigneRecue);
+				
+				charArrayOfclientInput = null;
+				
+				positionDansBuffer = positionDansBuffer + tailleDeLaLigneRecue;
+				
+				buf = buf + clientInput + "\n";
+				System.out.println("got (1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(new String(monBuffer, 0, positionDansBuffer));
+				System.out.println("--- fin buffer ---");
+				System.out.println("got (1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(buf);
+				System.out.println("--- fin buffer ---");
+				
+				return new String(monBuffer, 0, positionDansBuffer);
+			}
+			else if (clientInput.endsWith(Character.toString((char)4)))
+			{
+				System.out.println("rzo8: " + new String(monBuffer, 0, positionDansBuffer));
+				System.out.println("rzo8: " + buf);
+				// on ne rajoute pas la derniere ligne et on renvoi le buffer
+				System.out.println("got (plus de 1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(new String(monBuffer, 0, positionDansBuffer));
+				System.out.println("--- fin buffer ---");
+				System.out.println("got (plus de 1 ligne):");
+				System.out.println("--- debut buffer ---");
+				System.out.println(buf);
+				System.out.println("--- fin buffer ---");
+				
+				return new String(monBuffer, 0, positionDansBuffer);
+			}
+			else // clientInput == null
+			{
+				// on renvoi ce qu'on a déjà
+				return new String(monBuffer, 0, positionDansBuffer);
+			}
+								
+		
+	}
+	
 	public String traitementReq(String req) {
 		
+		try {
+
 		// on vérifie que la requête est lisible en XML
-		SAXBuilder sxb = new SAXBuilder();
-		try {
-			
-			Document reqXML = sxb.build(new StringReader(req));		
+		Document docReqXML = LireMess(req);
 		
-		try {
-		
-		Element root = reqXML.getRootElement();
+		Element root = docReqXML.getRootElement();
 		
 		List<Element> listeMess = root.getChildren("message");
 		
@@ -296,6 +428,38 @@ public class GestionProto {
                                     }
                                     
 				}
+                                else if (action.equals("afficherListeUtilisateurs")) {
+                                	
+                                	Document maRepXML = new Document();
+                                	Element repRoot = new Element("dasProtokol");
+                                	Element repMess = new Element("message");
+                                	Element repType = new Element("réponse");
+                                	Element repAction = new Element("action");
+                                	Element donnees = new Element("donnees");
+                                	
+                                	List<Element> listeUsers = monGU.getListeUtilisateurs("Exercice.xml");
+                                	
+                                	Iterator<Element> iterateurListeUsers = listeUsers.iterator();
+                                	
+                                	while (iterateurListeUsers.hasNext()) {
+                                		Element ElementActuel = iterateurListeUsers.next();
+                                		Element ElementNouveau = new Element("utilisateur");
+                                		ElementNouveau.addContent((new Element("nom")).setText(ElementActuel.getChild("nom").getText()));
+                                		ElementNouveau.addContent((new Element("Profession")).setText(ElementActuel.getChild("Profession").getText()));
+                                		donnees.addContent(ElementNouveau);
+                                	}
+                                	
+                                	repMess.addContent(repType);
+                                	repMess.addContent(repAction);
+                                	repMess.addContent(donnees);
+                                	repRoot.addContent(repMess);
+                                	maRepXML.addContent(repRoot);
+                                	
+                                	XMLOutputter monXMLOutputter = new XMLOutputter(Format.getPrettyFormat());
+                                	
+                                	return monXMLOutputter.outputString(maRepXML);
+                                	
+                                }
 			}
 			else if (type.equals("réponse")) 
 			{
@@ -316,7 +480,6 @@ public class GestionProto {
 		
 		} catch (NoSuchElementException nsee) {
 			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur", "visi" ,"MotDePasse", "Profession", "-1", null);
-		}
 		} catch (JDOMException je) {
 			return GenererMess("réponse", "RequêteMalformée","NomUtilisateur" ,"visi","MotDePasse", "Profession", "-1", null);
 		} catch (IOException e) {
