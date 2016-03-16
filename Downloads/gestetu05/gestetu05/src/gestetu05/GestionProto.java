@@ -366,7 +366,7 @@ public class GestionProto {
                                         		nomUtilisateur,
                                         		visi,
                                         		Mdp,
-                                        		"Profession",
+                                        		Profession,
                                         		"1",
                                         		null);
                                     }else{

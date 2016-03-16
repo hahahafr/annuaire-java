@@ -632,6 +632,7 @@ public class Client {
         System.out.println("############ --> Quitter : tapez 5 ##########################");
         System.out.println("############ --> Recommandations : tapez 6 ##########################");
         System.out.println("############ --> Afficher Liste Utilisateurs : tapez 7 ############");
+        System.out.println("############ --> Chat/Messagerie : tapez 8 ############");
         
         if ((userInput = stdIn.readLine()) != null && !userInput.equalsIgnoreCase("exit")) {
 				System.out.println("Votre choix : " + userInput);
@@ -642,7 +643,8 @@ public class Client {
         		&& !"4".equals(userInput)
         		&& !"5".equals(userInput)
         		&& !"6".equals(userInput)
-        		&& !"7".equals(userInput));
+        		&& !"7".equals(userInput)
+        		&& !"8".equals(userInput));
             return userInput;
         }
     public static void main(String[] args) throws IOException, JDOMException {
@@ -816,19 +818,20 @@ do{
             System.out.println("aprés le GenMessReqAjUt");
             outToServer.println(xmlOut + Character.toString((char)4));
             
-            srvRep = inFromServer.readLine();
+            srvRep = GP.RecevoirMessRzo(inFromServer);
             System.out.println("srvRep: " + srvRep);
-            if (!srvRep.equals("a")  ){
+            docXMLRep = GP.LireMess(srvRep);
+            if (docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("ajoutUtilisateur")
+            		&& docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")){
                 System.out.println("Vous êtes bien inscrit!");
-                userInput=Menu();
+                //userInput=Menu();
             }
             else{
                 System.out.println("Utilisateur déja présent, Recommencez!");
             }
-        }while("a".equals(srvRep)) ;
+        }while(!docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("ajoutUtilisateur")
+        		|| !docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")) ;
         
-        while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
-            System.out.println("echo: " + srvRep);
         
         
     } else if("3".equals(userInput)){
@@ -916,7 +919,7 @@ do{
                 userInput = Menu();
                 outToServer.println(xmlOut + Character.toString((char)4));
                 
-                while ((srvRep = inFromServer.readLine()).equals("</dasProtokol>") != true)
+                while ((srvRep = inFromServer.readLine()).endsWith(Character.toString((char)4)) != true)
                     System.out.println("echo: " + srvRep);
                 
                 
@@ -1017,6 +1020,24 @@ do{
     	while (iterateurListeUsers.hasNext()) {
     		Element ElementActuel = iterateurListeUsers.next();
     		System.out.println("nom: "+ElementActuel.getChild("nom").getText()+" | profession: "+ElementActuel.getChild("Profession").getText());
+    	}
+    	
+    }else if("8".equals(userInput)){
+    	
+    	if (userConnecte != null) {
+    		String utilisateur = userConnecte;
+    	
+        ServerSocket ss = null;
+        int h;
+        h = 50000+LireXML("Exercice.xml",utilisateur);
+        LireMailCo("mail.xml",utilisateur);
+       ss = connexion(h, utilisateur);
+       System.out.println(utilisateur + "est l'utilisateur");
+       System.out.println("le port est "+h);
+       Mess(utilisateur);
+    	} else
+    	{
+    		System.err.println("Vous n'etes pas authentifie !");
     	}
     	
     }
