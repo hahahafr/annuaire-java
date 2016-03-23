@@ -173,9 +173,11 @@ public class GestionProto {
 		
 		System.out.println("rzo1");
 		clientInput = in.readLine();
+		System.out.println("in.readLine()=" + clientInput);
 		
 		
-		if (clientInput.equals("a")) {
+		if (clientInput.equals("a") || clientInput.equals("a"+Character.toString((char)4))) {
+			System.out.println("\"a\" recu !");
 			return "a";
 		}
 		
@@ -397,7 +399,14 @@ public class GestionProto {
                                         		null);
                                     }else{
                                         
-                                        return "a";//GenererMess("réponse", "Connexion",nomUtilisateur,Mdp, "Profession", "0");
+                                    	return GenererMess("réponse",
+                                        		"Connexion",
+                                        		nomUtilisateur,
+                                        		"visi",
+                                        		Mdp,
+                                        		"Profession",
+                                        		"0",
+                                        		null);
                                     }
                                     
 				}
@@ -446,6 +455,7 @@ public class GestionProto {
                                 		Element ElementNouveau = new Element("utilisateur");
                                 		ElementNouveau.addContent((new Element("nom")).setText(ElementActuel.getChild("nom").getText()));
                                 		ElementNouveau.addContent((new Element("Profession")).setText(ElementActuel.getChild("Profession").getText()));
+                                		ElementNouveau.addContent((new Element("Visibilite")).setText(ElementActuel.getChild("Visibilite").getText()));
                                 		donnees.addContent(ElementNouveau);
                                 	}
                                 	

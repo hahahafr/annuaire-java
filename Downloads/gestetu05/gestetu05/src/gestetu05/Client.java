@@ -33,6 +33,8 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import static org.jdom2.filter.Filters.document;
+
+import org.jdom2.input.JDOMParseException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
@@ -99,6 +101,7 @@ public class Client {
             t = new Thread(new Accepter_connexion(ss,uti));
             t.start();
         } catch (IOException e) {
+        	System.err.println(e);
             System.err.println("Le port "+ss.getLocalPort()+" est déjà utilisé !");
         }
         return ss;
@@ -128,11 +131,22 @@ public class Client {
              try {                
 		System.out.println("Demande de connexion");
 		socket = new Socket("127.0.0.1",50000+Num);
-		System.out.println("Le lien a été établi"); // Si le message s'affiche c'est que je suis connecté
+		System.out.println("Le lien a été établi (socket=" + socket + ")"); // Si le message s'affiche c'est que je suis connecté
                 t1 = new Thread(new Chat_ClientServeurC(socket, uti));
-		t1.start();
+                
+    	try {
+			synchronized(System.in) {
+				t1.start();
+				while (t1.isAlive()) {
+					System.in.wait();
+				}
+            }
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
              }catch (IOException e) {
-            System.err.println("Utilisateur non connecté");
+            System.err.println("Utilisateur non connecté ou pas en mode chat");
             System.out.println("message pour le mail: ");
             if ((mail = stdIn2.readLine()) != null && !mail.equalsIgnoreCase("exit")) {
 				
@@ -145,7 +159,8 @@ public class Client {
                     }
                     catch (FileNotFoundException fnfe) {
            //si le fichier n'existe pas ...  
-           System.err.println("erreur!");
+           System.err.println("erreur FileNotFoundException!");
+           System.out.println("Création d'un fichier mail.xml");
            XMLOutputter sortie = new XMLOutputter(Format.getPrettyFormat());
       //Remarquez qu'il suffit simplement de créer une instance de FileOutputStream
       //avec en argument le nom du fichier pour effectuer la sérialisation.
@@ -218,11 +233,12 @@ public class Client {
       Element courant = (Element)i.next();
       if (courant.getChild("nom").getText().equals(uti)){        
           np = Integer.parseInt(courant.getAttribute("NuméroUtilisateur").getValue());
-          System.out.println(np); 
+          System.out.println("utilisateur trouve!");
+          System.out.println("id=" + np); 
           break;
       }
       else{
-          System.out.println("Cet utilisateur n'existe pas");
+          System.out.println("pas le bon utilisateur ("+courant.getChild("nom").getText()+")");
           np = -1;
       }
     }
@@ -711,9 +727,13 @@ do{
 	            docXMLRep = GP.LireMess(srvRep);
 	            if (docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("Connexion")
 	            		&& docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")){
-	                System.out.println("Vous êtes bien connecté!");
+	                
 	                
 	                userConnecte = utilisateur;
+	                
+	                System.out.println("##################################################");
+	                System.out.println("############ Bonjour " +userConnecte+ " ############");
+	                System.out.println("############ Vous êtes bien connecté! ############");
 	                
 	                /*
 	                ServerSocket ss = null;
@@ -729,7 +749,7 @@ do{
 	               //userInput = Menu();
 	            }
 	            else{
-	                System.out.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
+	                System.err.println("Nom d'utilisateur ou mot depasse erroné, recommencez!");
 	            }
 	        }while(!docXMLRep.getRootElement().getChild("message").getChild("action").getText().equals("Connexion")
             		|| !docXMLRep.getRootElement().getChild("message").getChild("résultat").getText().equals("1")) ;       
@@ -737,6 +757,9 @@ do{
         } catch (OutOfMemoryError | IndexOutOfBoundsException e) {
             System.err.println("Message du serveur trop gros, invalide");
             System.err.println(e);
+        } catch (JDOMParseException jpe) {
+        	System.err.println("Réponse du serveur invalide, recommencez !");
+        	System.err.println(jpe);
         }
     } 
     else if ("2".equals(userInput)){
@@ -940,9 +963,29 @@ do{
         
         
         
+    } else if("5".equals(userInput)){
+        
+        return;
+        
+        
+        
     }
     else if("6".equals(userInput)){
-        
+    	
+    	Document documentReq = new Document();
+    	Element racineReq = new Element("dasProtokol");
+    	documentReq.setRootElement(racineReq);
+    	Element messageReq = new Element("message");
+    	racineReq.addContent(messageReq);
+    	Element typeReq = new Element("type");
+    	typeReq.setText("requête");
+    	messageReq.addContent(typeReq);
+    	
+    	Element actionReq = new Element("action");
+    	Element donneesReq = new Element("données");
+    	Element donneurReq = new Element("donneur");
+    	Element receveurReq = new Element("receveur");
+    	Element competenceReq = new Element("compétence");
 
         // saisie de l'utilisateur a recommander
 
@@ -1019,7 +1062,14 @@ do{
     	
     	while (iterateurListeUsers.hasNext()) {
     		Element ElementActuel = iterateurListeUsers.next();
-    		System.out.println("nom: "+ElementActuel.getChild("nom").getText()+" | profession: "+ElementActuel.getChild("Profession").getText());
+    		Boolean estVisible = ElementActuel.getChild("Visibilite").getText().equals("oui");
+    		synchronized(System.out) {
+    			if (estVisible) {
+    				System.out.println("nom: "+ElementActuel.getChild("nom").getText()+" | profession: "+ElementActuel.getChild("Profession").getText());
+    			} else {
+    				System.out.println("un utilisateur invisible ici!");
+    			}
+			}
     	}
     	
     }else if("8".equals(userInput)){
@@ -1032,7 +1082,7 @@ do{
         h = 50000+LireXML("Exercice.xml",utilisateur);
         LireMailCo("mail.xml",utilisateur);
        ss = connexion(h, utilisateur);
-       System.out.println(utilisateur + "est l'utilisateur");
+       System.out.println(utilisateur + " est l'utilisateur");
        System.out.println("le port est "+h);
        Mess(utilisateur);
     	} else

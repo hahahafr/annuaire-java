@@ -16,17 +16,17 @@ public class ReceptionC implements Runnable {
 	
 	public void run() {
 		
-		while(true){
+		
 	        try {
-	        	
+	        	while(true){
 			message = in.readLine();
 			System.out.println(login+" : "+message);
+	    		}
 			
 		    } catch (IOException e) {
 				
 				e.printStackTrace();
 			}
-		}
 	}
 
 }
